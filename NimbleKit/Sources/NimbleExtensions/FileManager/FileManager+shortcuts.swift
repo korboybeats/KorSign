@@ -57,8 +57,13 @@ extension FileManager {
 		let raw = base64.replacingOccurrences(of: " ", with: "+")
 		guard let data = Data(base64Encoded: raw) else { return nil }
 		let dir = self.temporaryDirectory.appendingPathComponent(UUID().uuidString + pathComponent)
-		try? data.write(to: dir)
-		return dir
+		do {
+			try data.write(to: dir)
+			return dir
+		} catch {
+			try? removeItem(at: dir)
+			return nil
+		}
 	}
 	
 	// FeatherTweak

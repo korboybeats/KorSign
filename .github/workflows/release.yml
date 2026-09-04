@@ -2,9 +2,19 @@ name: Create New Release
 
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish a new release and update the source feed
+        type: boolean
+        default: false
+        required: true
 
 permissions:
   contents: write
+
+concurrency:
+  group: korsign-public-release
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -15,32 +25,48 @@ jobs:
         with:
           submodules: 'true'
       
-      - name: Use Xcode 16.4
+      - name: Use Xcode 26.2
         run: |
-          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
+          xcodebuild -version
+          test "$(xcodebuild -version | head -n 1)" = "Xcode 26.2"
+          SDK_VERSION=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "iPhoneOS SDK: $SDK_VERSION"
+          test "${SDK_VERSION%%.*}" -ge 26
 
-      - name: Compile RyukSign
+      - name: Check release validation
+        run: |
+          python3 tests/test_release_ipa.py
+          python3 tests/test_package_ipa.py
+          python3 tests/test_server_deps.py
+          python3 tests/test_create_release.py
+          ruby tests/test_release_workflow.rb
+          python3 tests/test_self_update.py
+
+      - name: Compile KorSign
         run: | 
           agvtool new-version -all $(git rev-parse HEAD)
           make
+
+      - name: Validate and stage Main
+        run: |
+          python3 tools/validate_ipa.py packages/KorSign.ipa --deps deps --expected-build "$(git rev-parse HEAD)" > validation.json
           mkdir upload
-          mv packages/* upload/
+          cp packages/KorSign.ipa upload/KorSign.ipa
 
       - name: Get Version
         id: get_version
         run: |
-          VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" Payload/*.app/Info.plist)
+          VERSION=$(python3 -c 'import json; print(json.load(open("validation.json"))["version"])')
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: RyukSign v${{ env.VERSION }}
-          tag_name: v${{ env.VERSION }}
-          files: |
-            upload/*ipa
-          generate_release_notes: true
-          fail_on_unmatched_files: true
-          draft: false
+        if: ${{ inputs.publish }}
+        run: sh tools/create_release.sh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-feed:
+    needs: build
+    if: ${{ inputs.publish }}
+    uses: ./.github/workflows/update_repo.yml
