@@ -1,0 +1,4 @@
+__pycache__/
+.venv/
+.wrangler/
+node_modules/

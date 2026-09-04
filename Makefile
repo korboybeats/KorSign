@@ -1,6 +1,7 @@
-NAME := RyukSign
+NAME := KorSign
+IPA_NAME := KorSign
 PLATFORM := iphoneos
-SCHEMES := RyukSign
+SCHEMES := KorSign
 TMP := $(TMPDIR)/$(NAME)
 STAGE := $(TMP)/stage
 APP := $(TMP)/Build/Products/Release-$(PLATFORM)
@@ -16,20 +17,11 @@ clean:
 	rm -rf Payload
 
 deps:
-	rm -rf deps || true
-	mkdir -p deps
-
-	@if curl -fsSL "$(CERT_JSON_URL)" -o cert.json; then \
-	    jq -r '.cert, .ca' cert.json > deps/server.crt; \
-	    jq -rj '.key1, .key2' cert.json > deps/server.pem; \
-	    jq -r '.info.domains.commonName' cert.json > deps/commonName.txt; \
-	else \
-	    echo "warning: $(CERT_JSON_URL) unavailable, building without a bundled certificate"; \
-	fi
+	python3 tools/refresh_server_deps.py --url "$(CERT_JSON_URL)" --output deps
 
 $(SCHEMES): deps
 	xcodebuild \
-	    -project RyukSign.xcodeproj \
+	    -project KorSign.xcodeproj \
 	    -scheme "$@" \
 	    -configuration Release \
 	    -arch arm64 \
@@ -37,7 +29,9 @@ $(SCHEMES): deps
 	    -derivedDataPath $(TMP) \
 	    -skipPackagePluginValidation \
 	    CODE_SIGNING_ALLOWED=NO \
-	    ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES=NO
+	    ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES=NO \
+	    OTHER_CFLAGS="-ffile-prefix-map=$(CURDIR)=/src/KorSign" \
+	    OTHER_CPLUSPLUSFLAGS="-ffile-prefix-map=$(CURDIR)=/src/KorSign"
 
 	rm -rf Payload
 	rm -rf $(STAGE)/
@@ -48,10 +42,9 @@ $(SCHEMES): deps
 	chmod -R 0755 "$(STAGE)/Payload/$@.app"
 	codesign --force --sign - --timestamp=none "$(STAGE)/Payload/$@.app"
 
-	cp deps/* "$(STAGE)/Payload/$@.app/" || true
+	cp deps/server.crt deps/server.pem deps/commonName.txt "$(STAGE)/Payload/$@.app/"
 
 	rm -rf "$(STAGE)/Payload/$@.app/_CodeSignature"
 	ln -sf "$(STAGE)/Payload" Payload
 	
-	mkdir -p packages
-	zip -r9 "packages/$@.ipa" Payload
+	python3 tools/package_ipa.py --stage "$(STAGE)" --output "packages/$(IPA_NAME).ipa" --deps deps

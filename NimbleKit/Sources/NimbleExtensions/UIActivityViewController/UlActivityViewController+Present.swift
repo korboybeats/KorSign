@@ -9,15 +9,21 @@ import UIKit.UIActivityViewController
 
 extension UIActivityViewController {
 	static public func show(
-		_ presenter: UIViewController = UIApplication.topViewController()!,
+		_ presenter: UIViewController? = UIApplication.topViewController(),
 		activityItems: [Any],
-		applicationActivities: [UIActivity]? = nil
+		applicationActivities: [UIActivity]? = nil,
+		retaining resource: AnyObject? = nil
 	) {
+		guard let presenter else { return }
 		let controller = Self(
 			activityItems: activityItems,
 			applicationActivities: applicationActivities
 		)
 		
+		// The controller owns this closure through sharing, cancellation and dismissal.
+		controller.completionWithItemsHandler = { [resource] _, _, _, _ in
+			withExtendedLifetime(resource) {}
+		}
 		if let popover = controller.popoverPresentationController {
 			popover.sourceView = presenter.view
 			popover.sourceRect = CGRect(

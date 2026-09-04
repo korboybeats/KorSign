@@ -1,11 +1,16 @@
 name: Update Repository
 
 on:
+  workflow_call:
   release:
     types: [published]
 
 permissions:
   contents: write
+
+concurrency:
+  group: korsign-source-feed
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -13,6 +18,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.repository.default_branch }}
 
       - name: Update app-repo.json
         run: |

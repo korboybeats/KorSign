@@ -3,7 +3,7 @@ options:
     - LICENSE
   packagePaths:
     - Package.swift
-  prefix: thewonderofyou.RyukSign
+  prefix: thewonderofyou.KorSign
   xcworkspacePath: "*.xcworkspace"
   addVersionNumbers: false
   singlePage: false
@@ -22,7 +22,7 @@ manual:
     file: "LICENSE_ELLEKIT"
 
   - name: "LiveContainer"
-    file: "Zsign/LICENSE_LC"
+    file: "LICENSE_LC"
 
 exclude:
   - swift-html-entities

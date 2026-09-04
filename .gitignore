@@ -77,8 +77,6 @@ release_notes.txt
 pending_notes.txt
 DEV.md
 
-RyukSign/Resources/SelfUpdateConfig.plist
-
 # Signing material / secrets (belt-and-suspenders)
 *.pem
 *.cer
@@ -90,6 +88,9 @@ RyukSign/Resources/SelfUpdateConfig.plist
 .env.*
 cert.txt
 
-_RyukSign/
+_KorSign/
 
 manifest-worker
+
+# Interrupted build-time TLS refresh staging (may contain key material)
+.korsign-deps-*/

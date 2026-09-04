@@ -1,0 +1,307 @@
+//
+//  SigningOptionsSharedView.swift
+//  KorSign
+//
+//  Created by samara on 15.04.2025.
+//
+
+import SwiftUI
+import NimbleViews
+
+// MARK: - View
+struct SigningOptionsView: View {
+	@Binding var options: Options
+	var temporaryOptions: Options?
+
+	@AppStorage(AutoSignManager.enabledKey) private var _autoSign: Bool = false
+	@AppStorage(InstallCleanup.deleteKey) private var _deleteAfterInstall: Bool = false
+	@AppStorage(InstallQueue.dismissAfterInstallKey) private var _dismissAfterInstalling = false
+	@AppStorage(InstallQueue.importAfterInstallKey) private var _importAfterInstalling = false
+	
+	// MARK: Body
+	var body: some View {
+		if (temporaryOptions == nil) {
+			NBSection(.localized("Protection")) {
+				Self.picker(
+					.localized("PPQ Protection"),
+					systemImage: "shield",
+					selection: $options.ppqProtection,
+					values: Options.PPQProtection.allCases
+				)
+			} footer: {
+				Text(.localized("Feather appends a random string to the app's bundle identifier. Ryuk also rewrites the identifier (ryuk prefix, keyword replacement) before appending it. Both help prevent your Apple ID from being flagged by Apple, so only disable this when using a signing service."))
+			}
+		}
+
+		NBSection(.localized("Security")) {
+			_toggle(
+				.localized("Keychain Isolation"),
+				systemImage: "key",
+				isOn: $options.keychainIsolation,
+				temporaryValue: temporaryOptions?.keychainIsolation
+			)
+		} footer: {
+			Text(.localized("Replaces wildcard keychain groups with the app's bundle identifier, preventing sideloaded apps from accessing each other's keychain entries."))
+		}
+
+		NBSection(.localized("General")) {
+			Self.picker(
+				.localized("Appearance"),
+				systemImage: "paintpalette",
+				selection: $options.appAppearance,
+				values: Options.AppAppearance.allCases
+			)
+			
+			Self.picker(
+				.localized("Minimum Requirement"),
+				systemImage: "ruler",
+				selection: $options.minimumAppRequirement,
+				values: Options.MinimumAppRequirement.allCases
+			)
+		}
+		
+		Section {
+			Self.picker(
+				.localized("Signing Type"),
+				systemImage: "signature",
+				selection: $options.signingOption,
+				values: Options.SigningOption.allCases
+			)
+		}
+		
+		if (temporaryOptions == nil) {
+			NBSection(.localized("Tweaks")) {
+				Self.picker(
+					.localized("Injection Path"),
+					systemImage: "doc.badge.gearshape",
+					selection: $options.injectPath,
+					values: Options.InjectPath.allCases
+				)
+
+				Self.picker(
+					.localized("Injection Folder"),
+					systemImage: "folder.badge.gearshape",
+					selection: $options.injectFolder,
+					values: Options.InjectFolder.allCases
+				)
+
+				_toggle(
+					.localized("Inject into Extensions"),
+					systemImage: "syringe",
+					isOn: $options.injectIntoExtensions,
+					temporaryValue: temporaryOptions?.injectIntoExtensions
+				)
+			}
+		}
+
+		NBSection(.localized("App Features")) {
+			_toggle(
+				.localized("File Sharing"),
+				systemImage: "folder.badge.person.crop",
+				isOn: $options.fileSharing,
+				temporaryValue: temporaryOptions?.fileSharing
+			)
+			
+			_toggle(
+				.localized("iTunes File Sharing"),
+				systemImage: "music.note.list",
+				isOn: $options.itunesFileSharing,
+				temporaryValue: temporaryOptions?.itunesFileSharing
+			)
+			
+			_toggle(
+				.localized("Pro Motion"),
+				systemImage: "speedometer",
+				isOn: $options.proMotion,
+				temporaryValue: temporaryOptions?.proMotion
+			)
+			
+			_toggle(
+				.localized("Game Mode"),
+				systemImage: "gamecontroller",
+				isOn: $options.gameMode,
+				temporaryValue: temporaryOptions?.gameMode
+			)
+			
+			_toggle(
+				.localized("iPad Fullscreen"),
+				systemImage: "ipad.landscape",
+				isOn: $options.ipadFullscreen,
+				temporaryValue: temporaryOptions?.ipadFullscreen
+			)
+
+			_toggle(
+				.localized("Fix File Picker"),
+				systemImage: "doc.viewfinder",
+				isOn: $options.fixFilePicker,
+				temporaryValue: temporaryOptions?.fixFilePicker
+			)
+		} footer: {
+			Text(.localized("Injects a small fix for apps whose file picker does nothing when you choose a file. Picked files are copied into the app's own folder first, so it can read them without the sandbox permissions it's missing."))
+		}
+		
+		NBSection(.localized("Removal")) {
+			_toggle(
+				.localized("Remove URL Scheme"),
+				systemImage: "ellipsis.curlybraces",
+				isOn: $options.removeURLScheme,
+				temporaryValue: temporaryOptions?.removeURLScheme
+			)
+			
+			_toggle(
+				.localized("Remove Provisioning"),
+				systemImage: "doc.badge.gearshape",
+				isOn: $options.removeProvisioning,
+				temporaryValue: temporaryOptions?.removeProvisioning
+			)
+		} footer: {
+			Text(.localized("Removing the provisioning file will exclude the mobileprovision file from being embedded inside of the application when signing, to help prevent any detection."))
+		}
+		
+		Section {
+			_toggle(
+				.localized("Force Localize"),
+				systemImage: "character.bubble",
+				isOn: $options.changeLanguageFilesForCustomDisplayName,
+				temporaryValue: temporaryOptions?.changeLanguageFilesForCustomDisplayName
+			)
+		} footer: {
+			Text(.localized("By default, localized titles for the app won't be changed, however this option overrides it."))
+		}
+		
+		if (temporaryOptions == nil) {
+			NBSection(.localized("Pre Signing")) {
+				_toggle(
+					.localized("Auto Sign"),
+					systemImage: "wand.and.rays",
+					isOn: $_autoSign
+				)
+			} footer: {
+				VStack(alignment: .leading, spacing: 6) {
+					Text(.localized("Automatically signs every downloaded or imported app, then deletes the unsigned copy. Install After Signing still applies; Delete After Signing is unnecessary."))
+
+					if _autoSign, !AutoSignManager.canSign {
+						Text(.localized("No certificate is selected. Import one in Settings, otherwise auto sign will fail."))
+							.foregroundStyle(.orange)
+					}
+				}
+			}
+		}
+
+		NBSection(.localized("Post Signing")) {
+            _toggle(
+                .localized("Install After Signing"),
+                systemImage: "arrow.down.circle",
+                isOn: $options.post_installAppAfterSigned,
+                temporaryValue: temporaryOptions?.post_installAppAfterSigned
+            )
+		} footer: {
+			Text(.localized("Starts installation after signing succeeds. The signed copy stays in your library unless Delete After Installing is on."))
+		}
+
+		Section {
+			_toggle(
+				.localized("Delete After Signing"),
+				systemImage: "trash",
+				isOn: $options.post_deleteAppAfterSigned,
+				temporaryValue: temporaryOptions?.post_deleteAppAfterSigned
+			)
+		} footer: {
+			Text(.localized("Deletes the original unsigned app after signing succeeds. The signed copy remains in your library. Auto Sign already does this."))
+		}
+
+		if temporaryOptions == nil {
+			Section {
+				_toggle(
+					.localized("Delete After Installing"),
+					systemImage: "trash.fill",
+					isOn: $_deleteAfterInstall
+				)
+			} footer: {
+				Text(.localized("Deletes the signed copy from your library after successful installation. The installed app stays on your device."))
+			}
+
+			Section {
+				_toggle(
+					.localized("Dismiss After Installing"),
+					systemImage: "xmark.circle",
+					isOn: $_dismissAfterInstalling
+				)
+			} footer: {
+				Text(.localized("Automatically closes the install panel after the final app installs successfully."))
+			}
+
+			Section {
+				_toggle(
+					.localized("Import Another IPA After Installing"),
+					systemImage: "doc.badge.plus",
+					isOn: $_importAfterInstalling
+				)
+				.disabled(!_dismissAfterInstalling)
+			} footer: {
+				Text(.localized("After the panel closes, opens the IPA file picker when KorSign is active. Requires Dismiss After Installing."))
+			}
+		}
+		
+		NBSection(.localized("Experiments")) {
+			_toggle(
+				.localized("Replace Substrate with ElleKit"),
+				systemImage: "pencil",
+				isOn: $options.experiment_replaceSubstrateWithEllekit,
+				temporaryValue: temporaryOptions?.experiment_replaceSubstrateWithEllekit
+			)
+			
+			_toggle(
+				.localized("Disable Liquid Glass"),
+				systemImage: "18.circle",
+				isOn: $options.experiment_disableLiquidGlass,
+				temporaryValue: temporaryOptions?.experiment_disableLiquidGlass
+			).disabled(options.experiment_supportLiquidGlass)
+			
+			_toggle(
+				.localized("Enable Liquid Glass"),
+				systemImage: "26.circle",
+				isOn: $options.experiment_supportLiquidGlass,
+				temporaryValue: temporaryOptions?.experiment_supportLiquidGlass
+			).disabled(options.experiment_disableLiquidGlass)
+		} footer: {
+			Text(.localized("This option force converts apps to try to use the new liquid glass redesign iOS 26 introduced, this may not work for all applications due to differing frameworks."))
+		}
+	}
+	
+	@ViewBuilder
+	static func picker<SelectionValue: Hashable, T: Hashable & LocalizedDescribable>(
+		_ title: String,
+		systemImage: String,
+		selection: Binding<SelectionValue>,
+		values: [T]
+	) -> some View {
+		Picker(selection: selection) {
+			ForEach(values, id: \.self) { value in
+				Text(value.localizedDescription)
+			}
+		} label: {
+			Label(title, systemImage: systemImage)
+		}
+	}
+	
+	@ViewBuilder
+	private func _toggle(
+		_ title: String,
+		systemImage: String,
+		isOn: Binding<Bool>,
+		temporaryValue: Bool? = nil
+	) -> some View {
+		Toggle(isOn: isOn) {
+			Label {
+				if let tempValue = temporaryValue, tempValue != isOn.wrappedValue {
+					Text(title).bold()
+				} else {
+					Text(title)
+				}
+			} icon: {
+				Image(systemName: systemImage)
+			}
+		}
+	}
+}
