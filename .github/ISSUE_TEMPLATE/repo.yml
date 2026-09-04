@@ -1,5 +1,5 @@
 name: Create Repo Support Request
-description: Suggest a repository to be supported by RyukSign.
+description: Suggest a repository to be supported by KorSign.
 title: '[Repo Support] '
 labels:
   - enhancement
@@ -9,7 +9,7 @@ body:
     attributes:
       value: >-
         Make sure you read the [Code of
-        Conduct](https://github.com/faroukbmiled/RyukSign/blob/main/CODE_OF_CONDUCT.md)
+        Conduct](https://github.com/faroukbmiled/Ryuk%53ign/blob/main/CODE_OF_CONDUCT.md)
         before making an issue, and make sure there aren't already the same bug
         reported.
 
@@ -17,7 +17,7 @@ body:
 
         If possible link any reference guides you may have used when creating said repository.
 
-        If you haven't created the repository yourself but you want it to be supported, please do also link it below (only AltStore repositories will be used in RyukSign, no other repositories like you've seen in Scarlet, or APT repositories). 
+        If you haven't created the repository yourself but you want it to be supported, please do also link it below (only AltStore repositories will be used in KorSign, no other repositories like you've seen in Scarlet, or APT repositories).
 
   - type: input
     id: repo

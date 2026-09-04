@@ -1,0 +1,7 @@
+[Unit]
+Description=Expire KorSign signed downloads
+[Service]
+Type=oneshot
+User=korsign
+Group=korsign
+ExecStart=/usr/bin/find /var/lib/korsign-updater -mindepth 1 -maxdepth 1 -type d -mmin +30 -exec /usr/bin/rm -rf -- {} +

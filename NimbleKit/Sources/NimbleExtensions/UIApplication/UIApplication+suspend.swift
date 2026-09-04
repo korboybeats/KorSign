@@ -9,9 +9,12 @@ import UIKit.UIApplication
 
 extension UIApplication {
 	/// Exit the application after an operation is complete
-	public func suspend() {
+	public func suspend(exitAfterSuspending: Bool = true) {
 		CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication)
-		self.perform(#selector(NSXPCConnection.suspend))
+		let selector = #selector(NSXPCConnection.suspend)
+		guard responds(to: selector) else { return }
+		self.perform(selector)
+		guard exitAfterSuspending else { return }
 		DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
 			exit(0)
 		}

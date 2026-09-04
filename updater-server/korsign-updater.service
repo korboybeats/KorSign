@@ -1,0 +1,26 @@
+[Unit]
+Description=KorSign signing service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=korsign
+Group=korsign
+WorkingDirectory=/opt/korsign-updater
+EnvironmentFile=/etc/korsign-updater.env
+ExecStart=/opt/korsign-updater/venv/bin/gunicorn --bind 127.0.0.1:8080 --workers 1 --threads 4 --timeout 180 app:app
+Restart=on-failure
+UMask=0077
+StateDirectory=korsign-updater
+StateDirectoryMode=0700
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectProc=invisible
+MemoryMax=2G
+TasksMax=64
+LimitCORE=0
+
+[Install]
+WantedBy=multi-user.target
