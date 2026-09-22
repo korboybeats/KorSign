@@ -45,34 +45,49 @@ struct SigningAdvancedView: View {
 	var body: some View {
 		NBSection(.localized("Advanced")) {
 			NavigationLink {
+                Group {
 				SigningTweaksView(app: app, options: $options)
-			} label: {
+
+                }.navigationHaptics()
+            } label: {
 				Label(.localized("Tweaks"), systemImage: "syringe")
 			}
 			.badge(_activeInjectionCount)
 
 			DisclosureGroup(isExpanded: $_isModifyExpanded) {
 				NavigationLink {
+                Group {
 					SigningDylibView(app: app, options: $options.optional())
-				} label: {
+
+                }.navigationHaptics()
+            } label: {
 					Label(.localized("Existing Dylibs"), systemImage: "doc.text.magnifyingglass")
 				}
 
 				NavigationLink {
+                Group {
 					SigningFrameworksView(app: app, options: $options.optional())
-				} label: {
+
+                }.navigationHaptics()
+            } label: {
 					Label(.localized("Frameworks & PlugIns"), systemImage: "shippingbox")
 				}
 				NavigationLink {
+                Group {
 					SigningEntitlementsView(bindingValue: $options.appEntitlementsFile, app: app, certificate: certificate)
-				} label: {
+
+                }.navigationHaptics()
+            } label: {
 					Label(.localized("Entitlements (Experimental)"), systemImage: options.appEntitlementsFile == nil ? "checkmark.seal" : "checkmark.seal.fill")
 				}
 				.badge(_entitlementsFlagCount)
 
 				NavigationLink {
+                Group {
 					SigningInfoPlistView(app: app, options: $options)
-				} label: {
+
+                }.navigationHaptics()
+            } label: {
 					Label(.localized("Info.plist (Experimental)"), systemImage: options.infoPlistChangeCount == 0 ? "doc.text" : "doc.text.fill")
 				}
 				.badge(options.infoPlistChangeCount)
@@ -99,12 +114,15 @@ struct SigningAdvancedView: View {
 
 			if showsProperties {
 				NavigationLink {
+                Group {
 					Form { SigningOptionsView(
 						options: $options,
 						temporaryOptions: OptionsManager.shared.options
 					)}
 					.navigationTitle(.localized("Properties"))
-				} label: {
+
+                }.navigationHaptics()
+            } label: {
 					Label(.localized("Properties"), systemImage: "slider.horizontal.3")
 				}
 			}

@@ -107,11 +107,12 @@ struct TweakFolderView: View {
 		switch _alert {
 		case .rename, .none:
 			TextField(.localized("Folder Name"), text: $_renameText)
-			Button(.localized("Cancel"), role: .cancel) {}
-			Button(.localized("Save")) { manager.renameFolder(folderId, to: _renameText) }
+			Button(.localized("Cancel"), role: .cancel) { AppHaptics.action();}
+			Button(.localized("Save")) { AppHaptics.action(); manager.renameFolder(folderId, to: _renameText) }
 		case .confirmDelete(let ids):
-			Button(.localized("Cancel"), role: .cancel) {}
+			Button(.localized("Cancel"), role: .cancel) { AppHaptics.action();}
 			Button(String.localized("Delete %lld", arguments: ids.count), role: .destructive) {
+				AppHaptics.action()
 				_selection.removeAll()
 				_isEditing = false
 				manager.deleteTweaks(ids)
@@ -133,18 +134,19 @@ struct TweakFolderView: View {
 		if _isEditing {
 			ToolbarItem(placement: .topBarLeading) {
 				Button(_selection == _allIds ? .localized("Deselect All") : .localized("Select All")) {
+					AppHaptics.action()
 					_selection = (_selection == _allIds) ? [] : _allIds
 				}
 			}
 			ToolbarItem(placement: .topBarTrailing) {
-				Button(.localized("Done")) { _isEditing = false; _selection.removeAll() }
+				Button(.localized("Done")) { AppHaptics.action(); _isEditing = false; _selection.removeAll() }
 					.fontWeight(.semibold)
 			}
 		} else {
 			ToolbarItem(placement: .topBarTrailing) {
 				Menu {
 					if manager.tweakCount(inFolder: folderId) > 0 {
-						Button(.localized("Select")) { _isEditing = true }
+						Button(.localized("Select")) { AppHaptics.action(); _isEditing = true }
 					}
 					Picker(.localized("Sort By"), selection: $_sortRaw) {
 						ForEach(ItemSortOption.allCases) { option in
@@ -152,13 +154,15 @@ struct TweakFolderView: View {
 						}
 					}
 					Divider()
-					Button { _shareFolder() } label: { Label(.localized("Share Folder"), systemImage: "square.and.arrow.up") }
-					Button { _saveFolder() } label: { Label(.localized("Save Folder to Files"), systemImage: "arrow.down.doc") }
+					Button { AppHaptics.action(); _shareFolder() } label: { Label(.localized("Share Folder"), systemImage: "square.and.arrow.up") }
+					Button { AppHaptics.action(); _saveFolder() } label: { Label(.localized("Save Folder to Files"), systemImage: "arrow.down.doc") }
 					Button {
+						AppHaptics.action()
 						_renameText = _folderName
 						_alert = .rename
 					} label: { Label(.localized("Rename Folder"), systemImage: "pencil") }
 					Button(role: .destructive) {
+						AppHaptics.action()
 						guard manager.deleteFolder(folderId) else { return }
 						dismiss()
 					} label: { Label(.localized("Delete Folder"), systemImage: "trash") }
@@ -175,6 +179,7 @@ struct TweakFolderView: View {
 	private func _row(_ tweak: ManagedTweak) -> some View {
 		if _isEditing {
 			Button {
+				AppHaptics.action()
 				if _selection.contains(tweak.id) { _selection.remove(tweak.id) }
 				else { _selection.insert(tweak.id) }
 			} label: {

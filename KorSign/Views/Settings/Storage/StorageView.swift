@@ -129,7 +129,7 @@ private extension StorageView {
 	@ViewBuilder
 	func _row(_ usage: StorageUsage) -> some View {
 		if usage.category.isBrowsable, usage.count > 0 {
-			NavigationLink(destination: StorageDetailView(category: usage.category)) {
+			NavigationLink(destination: StorageDetailView(category: usage.category).navigationHaptics()) {
 				StorageRowLabel(usage: usage)
 			}
 		} else {
@@ -141,6 +141,7 @@ private extension StorageView {
 	func _cleanup(_ report: StorageReport) -> some View {
 		Section {
 			Button(role: .destructive) {
+				AppHaptics.action()
 				DestructiveConfirm.present(
 					title: .localized("Free Up Space"),
 					message: .localized("Clears caches and logs. Working files, pending uploads, apps, tweaks and certificates stay.")

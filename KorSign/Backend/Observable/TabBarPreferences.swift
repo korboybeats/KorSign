@@ -82,7 +82,9 @@ final class TabBarPreferences: ObservableObject {
 	}
 
 	var visibleTabs: [TabEnum] {
-		orderedTabs.filter { !hidden.contains($0) }
+		orderedTabs.filter {
+            !hidden.contains($0) || ($0 == .library && (UserDefaults.standard.bool(forKey: "KorSign.openFilePickerOnLaunch") || UserDefaults.standard.bool(forKey: "KorSign.openFilePickerOnReopen")))
+        }
 	}
 
 	func isHideable(_ tab: TabEnum) -> Bool {

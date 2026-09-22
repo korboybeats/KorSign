@@ -36,6 +36,7 @@ struct CertificatesInfoView: View {
 				
 				Section {
 					Button(.localized("Open in Files"), systemImage: "folder") {
+						AppHaptics.action()
 						UIApplication.open(Storage.shared.getUuidDirectory(for: cert)!.toSharedDocumentsURL()!)
 					}
 				}
@@ -77,8 +78,11 @@ extension CertificatesInfoView {
 		if let entitlements = data.Entitlements {
 			Section {
 				NavigationLink(.localized("View Entitlements")) {
+                Group {
 					CertificatesInfoEntitlementView(entitlements: entitlements)
-				}
+
+                }.navigationHaptics()
+            }
 			}
 		}
 	}

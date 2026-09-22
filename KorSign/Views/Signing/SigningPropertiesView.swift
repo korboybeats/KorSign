@@ -33,6 +33,7 @@ struct SigningPropertiesView: View {
 			if let suggestion, suggestion != text {
 				Section {
 					Button {
+						AppHaptics.action()
 						text = suggestion
 					} label: {
 						Label(.localized("Match Certificate Identifier"), systemImage: "checkmark.seal")

@@ -10,8 +10,7 @@ import SwiftUI
 import NimbleExtensions
 import IDeviceSwift
 
-/// Every install and export runs through here. One sheet at a time keeps the OTA server from
-/// starting twice and lets a job survive a dismissed sheet.
+/// Presents one install prompt at a time while accepted server installs keep running.
 @MainActor
 final class InstallQueue: ObservableObject {
 	static let shared = InstallQueue()
@@ -27,7 +26,11 @@ final class InstallQueue: ObservableObject {
 
 	private var _installed: [AppInfoPresentable] = []
 	private var _requestsImportAfterDismiss = false
-	private var _pendingFailure: Error?
+	private var _pendingFailures: [(error: Error, installer: AppInstaller?)] = []
+	private var _isShowingFailure = false
+	private var _running: [ObjectIdentifier: AppInstaller] = [:]
+	private var _prepared: [String: AppInstaller] = [:]
+	private var _currentCompleted = false
 	private var _foregroundObserver: NSObjectProtocol?
 
 	private init() {
@@ -72,10 +75,16 @@ final class InstallQueue: ObservableObject {
 
 		if isFinished { _reset() }
 		apps.append(entry)
+		if _currentCompleted {
+			_advance()
+		} else if let installer, installer.hasStartedDownload {
+			_continueAfterDownload(installer)
+		}
 
 		// Server installs can package and validate in the background. UI presentation
 		// remains gated by _resumeWhenActive().
 		activate()
+		_prepareUpcoming()
 		_resumeWhenActive()
 	}
 
@@ -91,10 +100,32 @@ final class InstallQueue: ObservableObject {
 			&& UserDefaults.standard.integer(forKey: "Feather.installationMethod") == 0
 		guard UIApplication.shared.applicationState != .background || preparesServerInstall else { return }
 
-		let installer = AppInstaller(app: current.base, isSharing: current.archive)
+		if UserDefaults.standard.integer(forKey: "Feather.installationMethod") != 1 {
+			for prepared in _prepared.values { prepared.stop() }
+			_prepared.removeAll()
+		}
+		let installer = _prepared.removeValue(forKey: current.id)
+			?? AppInstaller(app: current.base, isSharing: current.archive)
 		self.installer = installer
 		FileLogger.log("install preparation started appState=\(UIApplication.shared.applicationState.rawValue)", category: "install")
-		installer.start { [weak self] result in self?._handle(result) }
+		installer.onDownloadStarted = { [weak self, weak installer] in
+			guard let installer else { return }
+			self?._continueAfterDownload(installer)
+		}
+		installer.start { [weak self, weak installer] result in
+			guard let installer else { return }
+			self?._handle(result, from: installer)
+		}
+		_prepareUpcoming()
+	}
+
+	private func _prepareUpcoming() {
+		guard installer != nil, UserDefaults.standard.integer(forKey: "Feather.installationMethod") == 1 else { return }
+		for entry in upcoming where !entry.archive && _prepared[entry.id] == nil {
+			let preparation = AppInstaller(app: entry.base)
+			_prepared[entry.id] = preparation
+			preparation.prepare()
+		}
 	}
 
 	private func _resumeWhenActive() {
@@ -126,7 +157,26 @@ final class InstallQueue: ObservableObject {
 		_abandon()
 	}
 
-	private func _handle(_ result: Result<AppInstaller.Outcome, Error>) {
+	private func _continueAfterDownload(_ active: AppInstaller) {
+		guard installer === active, index + 1 < apps.count else { return }
+		_running[ObjectIdentifier(active)] = active
+		installer = nil
+		index += 1
+		_currentCompleted = false
+		activate()
+	}
+
+	private func _handle(_ result: Result<AppInstaller.Outcome, Error>, from active: AppInstaller) {
+		if _running.removeValue(forKey: ObjectIdentifier(active)) != nil {
+			if case .success(.installed) = result { _installed.append(active.app) }
+			if case .failure(let error) = result {
+				_pendingFailures.append((error, nil))
+				_presentPendingFailureIfNeeded()
+			}
+			if _currentCompleted { _advance() }
+			return
+		}
+		guard installer === active else { return }
 		switch result {
 		case .success(.cancelled):
 			FileLogger.log("install result=cancelled", category: "install-import-debug")
@@ -141,6 +191,7 @@ final class InstallQueue: ObservableObject {
 				UIActivityViewController.show(activityItems: [package])
 			}
 		case .success(let outcome):
+			_currentCompleted = true
 			if case .installed = outcome, let app = installer?.app { _installed.append(app) }
 			if case .finishedUnverified = outcome {
 				FileLogger.log("install tracking finished without verification; skipping deletion", category: "install")
@@ -152,28 +203,35 @@ final class InstallQueue: ObservableObject {
 			}
 			FileLogger.log("install tracking finished sheet=\(isSheetPresented) appState=\(UIApplication.shared.applicationState.rawValue); advancing in 1.2s", category: "install-import-debug")
 			// Let the finished ring land before the next app takes over.
-			DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in self?._advance() }
+			DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self, weak active] in
+				guard let self, self.installer === active else { return }
+				self._advance()
+			}
 		case .failure(let error):
 			FileLogger.error("install result=failure \(error.localizedDescription)", category: "install-import-debug")
-			_pendingFailure = error
+			_pendingFailures.append((error, active))
 			_presentPendingFailureIfNeeded()
 		}
 	}
 
 	private func _presentPendingFailureIfNeeded() {
-		guard UIApplication.shared.applicationState == .active, let error = _pendingFailure else { return }
-		_pendingFailure = nil
+		guard UIApplication.shared.applicationState == .active, !_isShowingFailure, !_pendingFailures.isEmpty else { return }
+		_isShowingFailure = true
+		let failure = _pendingFailures.removeFirst()
 		DispatchQueue.main.async { [weak self] in
 			guard UIApplication.shared.applicationState == .active else {
-				self?._pendingFailure = error
+				self?._isShowingFailure = false
+				self?._pendingFailures.insert(failure, at: 0)
 				return
 			}
 			UIAlertController.showAlertWithOk(
 				title: .localized("Install"),
-				message: String(describing: error),
+				message: String(describing: failure.error),
 				action: {
 					HeartbeatManager.shared.start(true)
-					self?._abandon()
+					self?._isShowingFailure = false
+					if let failed = failure.installer, self?.installer === failed { self?._abandon() }
+					self?._presentPendingFailureIfNeeded()
 				}
 			)
 		}
@@ -183,6 +241,7 @@ final class InstallQueue: ObservableObject {
 	private func _advance() {
 		FileLogger.log("advance index=\(index) count=\(apps.count) sheet=\(isSheetPresented) appState=\(UIApplication.shared.applicationState.rawValue)", category: "install-import-debug")
 		guard index + 1 < apps.count else {
+			guard _running.isEmpty else { return }
 			let defaults = UserDefaults.standard
 			let dismisses = defaults.bool(forKey: Self.dismissAfterInstallKey)
 			let requestsImport = dismisses && defaults.bool(forKey: Self.importAfterInstallKey)
@@ -202,6 +261,7 @@ final class InstallQueue: ObservableObject {
 		installer?.stop()
 		installer = nil
 		index += 1
+		_currentCompleted = false
 		activate()
 	}
 
@@ -210,11 +270,14 @@ final class InstallQueue: ObservableObject {
 		FileLogger.log("abandon index=\(index) count=\(apps.count) sheet=\(isSheetPresented)", category: "install-import-debug")
 		guard index + 1 < apps.count else {
 			guard isSheetPresented else {
+				if !_running.isEmpty { installer?.stop(); _currentCompleted = true; return }
 				clear()
 				return
 			}
 
 			installer?.stop()
+			_currentCompleted = true
+			if !_running.isEmpty { isSheetPresented = false; return }
 			isFinished = true
 			isSheetPresented = false
 			return
@@ -224,13 +287,18 @@ final class InstallQueue: ObservableObject {
 	}
 
 	private func _reset() {
+		for prepared in _prepared.values { prepared.stop() }
+		_prepared.removeAll()
 		installer?.stop()
 		installer = nil
 		apps.removeAll()
 		index = 0
 		isFinished = false
 		_requestsImportAfterDismiss = false
-		_pendingFailure = nil
+		_pendingFailures.removeAll()
+		for active in _running.values { active.stop() }
+		_running.removeAll()
+		_currentCompleted = false
 
 		let installed = _installed
 		_installed.removeAll()

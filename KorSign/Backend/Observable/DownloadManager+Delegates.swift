@@ -48,7 +48,7 @@ extension DownloadManager: URLSessionDownloadDelegate {
 			try handlePackageFile(url: destinationURL, dl: download)
 		} catch {
 			if isAppInBackground {
-				sendCompletionNotification(for: download, status: "❌ Download failed")
+				sendCompletionNotification(for: download, status: "❌ Download failed: \(error.localizedDescription) (\((error as NSError).code))")
 			} else {
 				showUIErrorMessage(for: download, error: error as NSError)
 			}
@@ -109,6 +109,8 @@ extension DownloadManager: URLSessionDownloadDelegate {
 		}
 
 		let nsError = error as NSError
+		let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError
+		FileLogger.log("task=\(task.taskIdentifier) phase=network error=\(nsError.domain):\(nsError.code) underlying=\(underlying?.domain ?? "none"):\(underlying?.code ?? 0)", category: "download")
 
 		// Cancelled — stash resume data and bail.
 		if nsError.code == NSURLErrorCancelled {
@@ -195,7 +197,7 @@ extension DownloadManager: URLSessionDownloadDelegate {
 
 		// Any other non-recoverable error — drop the download.
 		if isAppInBackground {
-			sendCompletionNotification(for: download, status: "❌ Download failed")
+			sendCompletionNotification(for: download, status: "❌ Download failed: \(error.localizedDescription) (\((error as NSError).code))")
 		} else {
 			showUIErrorMessage(for: download, error: nsError)
 		}

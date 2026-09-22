@@ -48,7 +48,7 @@ final class ArchiveHandler: NSObject {
 		_payloadUrl = payloadUrl
 	}
 	
-	func archive() async throws -> InstallationArchive {
+	func archive(compressForTransfer: Bool = false) async throws -> InstallationArchive {
 		// Keep archiving alive in the background.
 		await MainActor.run {
 			if self.backgroundTaskManager == nil {
@@ -75,11 +75,15 @@ final class ArchiveHandler: NSObject {
 
 			let ipaUrl = self._archive.url
 			let gate = ProgressGate()
+			let selectedCompression = ZipCompression.allCases[ArchiveHandler.getCompressionLevel()]
+			// An uncompressed install archive can be much larger than the imported IPA.
+			let compression: ZipCompression = compressForTransfer && selectedCompression == .NoCompression ? .BestSpeed : selectedCompression
+			let started = ProcessInfo.processInfo.systemUptime
 
 			try AppArchiver.zip(
 				payload: payloadUrl,
 				to: ipaUrl,
-				compression: ZipCompression.allCases[ArchiveHandler.getCompressionLevel()],
+				compression: compression,
 				progress: { progress in
 					guard gate.admit(progress) else { return }
 					Task { @MainActor in
@@ -87,6 +91,8 @@ final class ArchiveHandler: NSObject {
 					}
 				})
 
+			let bytes = (try? ipaUrl.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+			FileLogger.log("packaging elapsed=\(ProcessInfo.processInfo.systemUptime - started)s bytes=\(bytes) compression=\(compression)", category: "idevice-payload")
 			return self._archive
 		}.value
 	}

@@ -98,6 +98,7 @@ struct MinimizedConditionalHeader: View {
             Spacer()
             
             Button {
+                AppHaptics.action()
                 viewState = .collapsed
                 ConditionalDownloadHeaderView.sessionState = .collapsed
             } label: {
@@ -165,6 +166,7 @@ struct CollapsedConditionalHeader: View {
             VStack(alignment: .leading, spacing: 2) {
                 if downloads.count == 1 {
                     Button(action: {
+                        AppHaptics.action()
                         DownloadNavigationHelper.handleAppNameTap(for: downloads[0])
                     }) {
                         Text(downloads[0].fileName)
@@ -190,6 +192,7 @@ struct CollapsedConditionalHeader: View {
 
             HStack(spacing: 8) {
                 Button {
+                    AppHaptics.action()
                     viewState = .minimized
                     ConditionalDownloadHeaderView.sessionState = .minimized
                 } label: {
@@ -200,6 +203,7 @@ struct CollapsedConditionalHeader: View {
                 .buttonStyle(.borderless)
                 
                 Button {
+                    AppHaptics.action()
                     viewState = .expanded
                     ConditionalDownloadHeaderView.sessionState = .expanded
                 } label: {
@@ -262,6 +266,7 @@ struct ExpandedConditionalHeader: View {
                 Spacer()
 
                 Button {
+                    AppHaptics.action()
                     if isPaused {
                         DownloadManager.shared.resumeAllDownloads()
                     } else {
@@ -275,6 +280,7 @@ struct ExpandedConditionalHeader: View {
                 .buttonStyle(.borderless)
 
                 Button {
+                    AppHaptics.action()
                     viewState = .collapsed
                     ConditionalDownloadHeaderView.sessionState = .collapsed
                 } label: {

@@ -34,6 +34,7 @@ struct SigningDescriptionView: View {
 			if !text.isEmpty {
 				ToolbarItem(placement: .topBarTrailing) {
 					Button(.localized("Clear")) {
+						AppHaptics.action()
 						text = ""
 					}
 					.foregroundStyle(.secondary)

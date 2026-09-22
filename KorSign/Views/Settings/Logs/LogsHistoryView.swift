@@ -29,6 +29,7 @@ struct LogsHistoryView: View {
 				.toolbar {
 					ToolbarItem(placement: .topBarTrailing) {
 						Button(.localized("Share"), systemImage: "square.and.arrow.up") {
+							AppHaptics.action()
 							_isExporting = true
 							Task {
 								defer { _isExporting = false }
@@ -44,9 +45,10 @@ struct LogsHistoryView: View {
 						.disabled(_entries.isEmpty || _isExporting)
 					}
 					NBToolbarMenu(systemImage: "ellipsis.circle", style: .icon, placement: .topBarTrailing) {
-						Button(.localized("Refresh"), systemImage: "arrow.clockwise") { _load() }
+						Button(.localized("Refresh"), systemImage: "arrow.clockwise") { AppHaptics.action(); _load() }
 						Divider()
 						Button(.localized("Clear"), systemImage: "trash", role: .destructive) {
+							AppHaptics.action()
 							FileLogger.clear()
 							_entries = []
 						}

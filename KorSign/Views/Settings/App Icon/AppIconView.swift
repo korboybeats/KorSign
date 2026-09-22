@@ -76,6 +76,7 @@ extension AppIconView {
 		icon: AppIconView.AltIcon
 	) -> some View {
 		Button {
+			AppHaptics.action()
 			UIApplication.shared.setAlternateIconName(icon.key) { _ in
 				currentIcon = UIApplication.shared.alternateIconName
 			}

@@ -59,6 +59,7 @@ extension ConfigurationDictView {
 	@ViewBuilder
 	private func _actions(key: String) -> some View {
 		Button(role: .destructive) {
+			AppHaptics.action()
 			dataDict.removeValue(forKey: key)
 		} label: {
 			Label(.localized("Delete"), systemImage: "trash")

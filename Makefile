@@ -7,7 +7,7 @@ STAGE := $(TMP)/stage
 APP := $(TMP)/Build/Products/Release-$(PLATFORM)
 CERT_JSON_URL := https://ryuksign-install.ryuksign.workers.dev/pack.json
 
-.PHONY: all deps clean $(SCHEMES)
+.PHONY: all deps transport clean $(SCHEMES)
 
 all: $(SCHEMES)
 
@@ -19,7 +19,10 @@ clean:
 deps:
 	python3 tools/refresh_server_deps.py --url "$(CERT_JSON_URL)" --output deps
 
-$(SCHEMES): deps
+transport:
+	python3 tools/idevice-transport/build.py
+
+$(SCHEMES): deps transport
 	xcodebuild \
 	    -project KorSign.xcodeproj \
 	    -scheme "$@" \

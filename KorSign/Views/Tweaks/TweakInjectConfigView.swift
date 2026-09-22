@@ -65,6 +65,7 @@ struct TweakInjectConfigView: View {
 				}
 
 				NavigationLink {
+                Group {
 					TweakInfoView(
 						title: file.wrappedValue.fileName,
 						fileURL: file.wrappedValue.fileURL,
@@ -77,7 +78,9 @@ struct TweakInjectConfigView: View {
 						} : nil,
 						currentConfig: file.config.wrappedValue
 					)
-				} label: {
+
+                }.navigationHaptics()
+            } label: {
 					Label(.localized("File Info & Dependencies"), systemImage: "info.circle")
 				}
 			}

@@ -12,7 +12,7 @@ Any contributions should follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
 - **If you're planning on making a large contribution, please [make an issue](https://github.com/korboybeats/KorSign/issues) beforehand.**
 - **Your contributions should be licensed appropriately.**
   - KorSign / RyukSign / Feather: GPLv3
-  - AltSourceKit / NimbleKit / Zsign / IDeviceKitten: MIT
+  - AltSourceKit / NimbleKit / Zsign / IDeviceKitten / ZIPFoundation: MIT
   - ElleKit: BSD-3-Clause
 - **Typo contributions are okay**, just make sure they are appropriate.
   - This includes localizations.
@@ -29,12 +29,10 @@ Any contributions should follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
   Swift 5 language mode; compiler version and language mode are different.
 - Host deployment target: iOS 16.0. Widget configurations currently target iOS
   26.0. These runtime targets are separate from the SDK needed to compile.
-- The release workflow selects Xcode 26.2, checks the SDK, and validates only Main
-  before publication.
-  Packaging validates a temporary IPA before replacing the previous file. Dependency
-  refresh now validates and atomically swaps complete TLS resource sets on macOS.
-  Releases require a new version/tag and stop on lookup errors or existing tags.
-  Failed publication needs deliberate review; the workflow never overwrites assets.
+- Maintainer releases are built locally on macOS. The optional GitHub workflow
+  is not a required build or release check.
+- Packaging validates a temporary IPA before replacing the previous file. TLS
+  resource refresh validates and atomically swaps the complete resource set.
 
 1. Clone the repository with submodules:
     ```sh
@@ -107,8 +105,36 @@ release; keep Dev builds private unless explicitly requested. Never place certif
 
 ## Release workflow
 
-Release workflow dispatch defaults to `publish=false`: hosted compilation and IPA
-validation run, with no release, asset upload or feed commit. `publish=true` creates
-a new-version Main release and then directly calls the source-feed workflow. The
-feed commit targets the default branch and remains subject to branch permissions.
-Automatic feed updates require the repository workflow to be enabled.
+Build releases locally on macOS. Keep the three-part marketing version aligned
+with the adopted RyukSign base. Use a positive integer build number shared by the
+app and widget, increasing it for each KorSign revision. For example:
+
+| Field | Revision 1 |
+| --- | --- |
+| App version | `3.0.1` |
+| Build number | `1` |
+| Git tag | `v3.0.1-r1` |
+| Release title | `KorSign 3.0.1 Revision 1` |
+
+Revision tags identify stable KorSign releases, not SemVer prereleases. The updater
+compares the base version first, then the revision. Legacy builds without revision
+support require a one-time manual install.
+
+1. Update the app and widget version/build together and run the affected checks.
+2. Build Main locally, derive Dev from that exact Main, and validate both IPAs.
+3. Stage only Main as `upload/KorSign.ipa`. Create a draft with
+   `tools/create_release.sh`, setting `VERSION`, `REVISION`, `GITHUB_REPOSITORY`,
+   and `GITHUB_SHA` to the validated artifact's version, build, repository, and
+   source commit. Set `DRAFT=true`, `NOTES_FILE` to reviewed release notes, and
+   `RELEASE_TITLE` to the display title. Without `DRAFT=true`, the script publishes.
+4. Confirm the signing service supports the release tag and review the draft.
+   Publish only Main; keep Dev private.
+5. Run `sh update-repo.sh` after publication. Review and commit the updated source
+   feed, including its `version`, `buildVersion`, and exact Main download URL.
+
+Keep published release tags and assets stable.
+
+The optional GitHub workflow defaults to `publish=false`. It is not used for the
+maintainer's local release process. Its publication path invokes the source-feed
+workflow, which must be enabled for automatic feed updates; otherwise update the
+feed locally. Do not assume a published release automatically updated the feed.

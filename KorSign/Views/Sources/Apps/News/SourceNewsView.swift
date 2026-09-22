@@ -31,6 +31,7 @@ struct SourceNewsView: View {
 					LazyHStack(spacing: 10) {
 						ForEach(news.reversed(), id: \.id) { new in
 							Button {
+								AppHaptics.action()
 								_selectedNewsPresenting = new
 							} label: {
 								SourceNewsCardView(new: new)

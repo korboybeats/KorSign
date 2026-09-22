@@ -65,12 +65,15 @@ struct PlistNodeView: View {
 				placement: .topBarTrailing
 			) {
 				Button(.localized("Add Entry"), systemImage: "plus") {
+					AppHaptics.action()
 					_present(.string)
 				}
 				Button(.localized("Add Dictionary"), systemImage: "curlybraces") {
+					AppHaptics.action()
 					_present(.dictionary)
 				}
 				Button(.localized("Add Array"), systemImage: "list.bullet") {
+					AppHaptics.action()
 					_present(.array)
 				}
 			}
@@ -102,6 +105,7 @@ extension PlistNodeView {
 		Group {
 			if let kind = PlistValueKind.kind(for: value) {
 				NavigationLink {
+                Group {
 					// Erased, otherwise the view type would recurse into itself forever.
 					if kind.isContainer {
 						AnyView(PlistNodeView(title: label, value: value) { save(label, $0) })
@@ -115,7 +119,9 @@ extension PlistNodeView {
 							onSave: save
 						))
 					}
-				} label: {
+
+                }.navigationHaptics()
+            } label: {
 					PlistValueRow(key: label, value: value)
 				}
 			} else {
@@ -123,7 +129,7 @@ extension PlistNodeView {
 			}
 		}
 		.swipeActions(edge: .trailing) {
-			Button(role: .destructive, action: delete) {
+			Button(role: .destructive, action: { AppHaptics.action(); delete() }) {
 				Label(.localized("Delete"), systemImage: "trash")
 			}
 		}

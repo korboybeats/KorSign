@@ -8,8 +8,10 @@
 import Foundation
 import SwiftUI
 import OSLog
+import ZIPFoundation
 
 final class AppFileHandler: NSObject, @unchecked Sendable {
+	let extractionBufferSize = 256 * 1024
 	private let _fileManager = FileManager.default
 	private let _uuid = UUID().uuidString
 	private let _uniqueWorkDir: URL
@@ -96,6 +98,40 @@ final class AppFileHandler: NSObject, @unchecked Sendable {
 		)
 	}
 
+	/// Read only the main bundle metadata and icon before the full extraction.
+	private func _loadImportIcon() {
+		guard let download = _download, let archive = try? Archive(url: _ipa, accessMode: .read),
+			let info = archive.first(where: {
+				let parts = $0.path.split(separator: "/")
+				return parts.count == 3 && parts[0] == "Payload"
+					&& parts[1].hasSuffix(".app") && parts[2] == "Info.plist" && $0.type == .file
+			}), info.uncompressedSize <= 1_048_576 else { return }
+		let preview = _uniqueWorkDir.appendingPathComponent("IconPreview.app")
+		defer { try? _fileManager.removeItem(at: preview) }
+		do {
+			try download.importControl.checkpoint()
+			try _fileManager.createDirectory(at: preview, withIntermediateDirectories: true)
+			let checksum = try archive.extract(info, to: preview.appendingPathComponent("Info.plist"))
+			guard checksum == info.checksum, let name = Bundle(url: preview)?.iconFileName else { return }
+			let prefix = String(info.path.dropLast("Info.plist".count))
+			let stem = (name as NSString).deletingPathExtension
+			// Prefer Retina variants, using the same primary icon metadata as Library.
+			for suffix in ["@3x.png", "@2x.png", ".png", ""] {
+				guard let entry = archive[prefix + stem + suffix], entry.type == .file,
+					entry.uncompressedSize <= 8_388_608 else { continue }
+				try download.importControl.checkpoint()
+				let iconURL = preview.appendingPathComponent("icon.png")
+				try? _fileManager.removeItem(at: iconURL)
+				let crc = try archive.extract(entry, to: iconURL)
+				guard crc == entry.checksum, let image = UIImage(contentsOfFile: iconURL.path) else { continue }
+				DispatchQueue.main.async { download.appIcon = image }
+				return
+			}
+		} catch {
+			// Icon preview is optional; the normal extractor reports archive errors.
+		}
+	}
+
 	func extract() async throws {
 		let download = self._download
 
@@ -105,9 +141,14 @@ final class AppFileHandler: NSObject, @unchecked Sendable {
 			try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
 				DispatchQueue.global(qos: .utility).async {
 					do {
+						self._loadImportIcon()
 						try ArchiveExtraction.unzip(
 							self._ipa,
 							to: self._uniqueWorkDir,
+							bufferSize: self.extractionBufferSize,
+							useZlib: true,
+							profile: { FileLogger.log("app=\(self._uuid) \($0)", category: "import-extraction") },
+							checkpoint: { try download?.importControl.checkpoint() },
 							progress: { progress in
 								if let download = download {
 									DispatchQueue.main.async {

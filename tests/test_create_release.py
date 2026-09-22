@@ -10,7 +10,7 @@ with tempfile.TemporaryDirectory(prefix='korsign-release-policy-') as directory:
     work = Path(directory)
     for name, source in {
         'git': '''import os, sys
-assert sys.argv[1:] == ['ls-remote', '--exit-code', '--refs', 'origin', 'refs/tags/v3.0.2']
+assert sys.argv[1:] == ['ls-remote', '--exit-code', '--refs', 'origin', 'refs/tags/v3.0.2' + ('-r' + os.environ['REVISION'] if os.environ.get('REVISION') else '')]
 sys.exit(int(os.environ['TAG_STATUS']))
 ''',
         'gh': '''import json, os, sys
@@ -39,6 +39,12 @@ sys.exit(int(os.environ['CREATE_STATUS']))
             assert json.loads(log.read_text()) == ['release', 'create', 'v3.0.2',
                 'upload/KorSign.ipa', '--repo', 'fixture/KorSign', '--target', 'a'*40,
                 '--title', 'KorSign v3.0.2', '--generate-notes']
+
+    log.unlink(missing_ok=True)
+    result = subprocess.run(['sh', str(root / 'tools/create_release.sh')], cwd=work,
+        env=env | {'TAG_STATUS': '2', 'CREATE_STATUS': '0', 'REVISION': '1'}, capture_output=True)
+    assert result.returncode == 0, result.stderr
+    assert json.loads(log.read_text())[2] == 'v3.0.2-r1'
 workflow = (root / '.github/workflows/release.yml').read_text()
 assert 'softprops/action-gh-release' not in workflow
 assert 'cancel-in-progress: false' in workflow

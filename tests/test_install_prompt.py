@@ -8,7 +8,7 @@ source = (root / 'KorSign/Backend/Observable/AppInstaller.swift').read_text()
 # Package preparation is covered by test_installation_archive.py; omit real signing/network.
 a = source.index('\t// MARK: Pipeline')
 b = source.index('\t// MARK: Status')
-source = source[:a] + '\tprivate func _run() async {}\n\n' + source[b:]
+source = source[:a] + '\tfunc prepare() {}\n\tprivate func _run() async {}\n\n' + source[b:]
 source = source.replace('import SwiftUI', '').replace('import IDeviceSwift', '')
 source = source.replace('private ', '')  # expose lifecycle entry points only in the disposable fixture
 source = source.replace('UserDefaults.standard', 'testDefaults')
@@ -21,6 +21,7 @@ import Combine
 var isDevDiagnostic = false
 let defaultsName = "KorSignPromptTest-" + UUID().uuidString
 let testDefaults = UserDefaults(suiteName: defaultsName)!
+final class InstallationArchive: Sendable {}
 protocol AppInfoPresentable { var identifier: String? { get } }
 struct TestApp: AppInfoPresentable { let identifier: String? = "fixture.app" }
 extension String { static func localized(_ value: String, arguments: String = "") -> String { value } }
@@ -113,7 +114,13 @@ checks = r'''
                 retry._handle(.ready)
                 try await drain()
                 assert((retry._ota.phase == .waiting))
+                var downloadsStarted = 0
+                retry.onDownloadStarted = { downloadsStarted += 1 }
+                retry._handle(.sendingManifest)
+                assert(downloadsStarted == 0)
                 retry._handle(.sendingPayload)
+                retry._handle(.sendingPayload)
+                assert(downloadsStarted == 1)
                 assert(!(retry._ota.phase == .waiting))
                 assert(retryResults.isEmpty)
                 retry._handle(.installing)

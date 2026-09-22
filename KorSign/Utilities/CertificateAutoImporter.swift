@@ -130,8 +130,7 @@ class CertificateAutoImporter {
 							if let error = error {
 								Logger.misc.error("Failed to update \(certName): \(error.localizedDescription)")
 								DispatchQueue.main.async {
-									let generator = UINotificationFeedbackGenerator()
-									generator.notificationOccurred(.error)
+
 									UIAlertController.showAlertWithOk(
 										title: .localized("Certificate Update Failed"),
 										message: error.localizedDescription
@@ -142,10 +141,6 @@ class CertificateAutoImporter {
 								// Store hash so we don't re-update next launch.
 								UserDefaults.standard.set(certHash, forKey: hashKey)
 
-								DispatchQueue.main.async {
-									let generator = UINotificationFeedbackGenerator()
-									generator.notificationOccurred(.success)
-								}
 							}
 						}
 					} else {
@@ -159,8 +154,7 @@ class CertificateAutoImporter {
 							if let error = error {
 								Logger.misc.error("Failed to import \(certName): \(error.localizedDescription)")
 								DispatchQueue.main.async {
-									let generator = UINotificationFeedbackGenerator()
-									generator.notificationOccurred(.error)
+
 									UIAlertController.showAlertWithOk(
 										title: .localized("Certificate Import Failed"),
 										message: error.localizedDescription
@@ -171,10 +165,6 @@ class CertificateAutoImporter {
 								// Store hash so we don't re-import next launch.
 								UserDefaults.standard.set(certHash, forKey: hashKey)
 
-								DispatchQueue.main.async {
-									let generator = UINotificationFeedbackGenerator()
-									generator.notificationOccurred(.success)
-								}
 							}
 						}
 					}

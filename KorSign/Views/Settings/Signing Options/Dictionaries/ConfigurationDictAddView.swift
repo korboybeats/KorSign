@@ -35,6 +35,7 @@ struct ConfigurationDictAddView: View {
 
 			Section {
 				Button(.localized("Choose from Library"), systemImage: "square.grid.2x2") {
+					AppHaptics.action()
 					_isLibraryPickerPresenting = true
 				}
 			}

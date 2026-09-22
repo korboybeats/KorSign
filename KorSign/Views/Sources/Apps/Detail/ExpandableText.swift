@@ -40,6 +40,7 @@ struct ExpandableText: View {
 
 			if truncated {
 				Button(action: {
+					AppHaptics.action()
 					withAnimation {
 						expanded.toggle()
 					}

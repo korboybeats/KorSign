@@ -45,11 +45,13 @@ enum Zsign {
     static var result = false
     static var callback: Bool? = nil
     static var calls = 0
+    static var removeProvision: Bool? = nil
     static func removeDylibs(appExecutable: String, using: [String]) -> Bool { true }
     static func sign(appPath: String, provisionPath: String = "", p12Path: String = "",
                      p12Password: String = "", entitlementsPath: String, adhoc: Bool = false,
                      removeProvision: Bool, completion: (Bool) -> Void) -> Bool {
         calls += 1
+        Self.removeProvision = removeProvision
         if let callback { completion(callback) }
         return result
     }
@@ -88,6 +90,13 @@ final class CommitGate {
             catch SigningFileHandlerError.signFailed { failed = true }
             assert(failed == !Zsign.result)
             assert(!StdoutCapture.shared.active)
+        }
+        // Zsign removes the embedded profile only when asked to.
+        for remove in [true, false] {
+            let gate = CommitGate()
+            gate._options.removeProvisioning = remove
+            try? await gate.modify()
+            assert(Zsign.removeProvision == remove)
         }
         let missing = CommitGate()
         missing.appCertificate = nil

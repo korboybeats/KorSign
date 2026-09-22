@@ -39,6 +39,7 @@ struct IgnoredUpdatesView: View {
 			if !_manager.bundleIDs.isEmpty {
 				ToolbarItem(placement: .topBarTrailing) {
 					Button(.localized("Resume All"), role: .destructive) {
+						AppHaptics.action()
 						_resumeAll()
 					}
 				}
@@ -62,6 +63,7 @@ struct IgnoredUpdatesView: View {
 		}
 		.swipeActions(edge: .trailing, allowsFullSwipe: true) {
 			Button {
+				AppHaptics.action()
 				_manager.resume(bundleID)
 			} label: {
 				Label(.localized("Resume Updates"), systemImage: "bell")

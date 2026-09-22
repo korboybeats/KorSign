@@ -3,4 +3,5 @@
 	url = https://github.com/korboybeats/Zsign-Package.git
 [submodule "IDeviceKitten"]
 	path = IDeviceKitten
-	url = https://github.com/claration/IDeviceKit.git
+	url = https://github.com/korboybeats/idevicekit.git
+	branch = korsign

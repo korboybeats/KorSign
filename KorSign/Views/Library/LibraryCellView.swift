@@ -38,7 +38,7 @@ struct LibraryCellView: View {
 	
 	private func _toggleSelection() {
 		guard let uuid = app.uuid else { return }
-		NBHaptic.selection()
+		AppHaptics.navigation()
 		if selectedAppUUIDs.contains(uuid) {
 			selectedAppUUIDs.remove(uuid)
 		} else {
@@ -54,6 +54,7 @@ struct LibraryCellView: View {
 		HStack(spacing: NBSpacing.row) {
 			if isEditing {
 				Button {
+					AppHaptics.action()
 					_toggleSelection()
 				} label: {
 					Image(systemName: _isSelected ? "checkmark.circle.fill" : "circle")
@@ -96,6 +97,7 @@ struct LibraryCellView: View {
 				Divider()
 				if let onSelectMore {
 					Button(.localized("Select"), systemImage: "checkmark.circle") {
+						AppHaptics.action()
 						onSelectMore()
 					}
 				}
@@ -133,6 +135,7 @@ extension LibraryCellView {
 	@ViewBuilder
 	private func _actions(for app: AppInfoPresentable) -> some View {
 		Button(.localized("Delete"), systemImage: "trash", role: .destructive) {
+			AppHaptics.action()
 			Storage.shared.deleteApp(for: app)
 		}
 	}
@@ -140,11 +143,13 @@ extension LibraryCellView {
 	@ViewBuilder
 	private func _contextActions(for app: AppInfoPresentable) -> some View {
 		Button(.localized("Get Info"), systemImage: "info.circle") {
+			AppHaptics.action()
 			Presentation.afterDismiss { selectedInfoAppPresenting = AnyApp(base: app) }
 		}
 
 		if let bundleId = app.originalIdentifier ?? app.identifier {
 			Button(.localized("View on App Store"), systemImage: "bag") {
+				AppHaptics.action()
 				AppStoreHelper.openAppStore(for: bundleId) { result in
 					switch result {
 					case .success:
@@ -172,6 +177,7 @@ extension LibraryCellView {
 				.localized(isIgnored ? "Resume Updates" : "Ignore Updates"),
 				systemImage: isIgnored ? "bell" : "bell.slash"
 			) {
+				AppHaptics.action()
 				SkippedUpdatesManager.shared.toggle(bundleId)
 			}
 		}
@@ -182,23 +188,29 @@ extension LibraryCellView {
 		if app.isSigned {
 			if let id = app.identifier {
 				Button(.localized("Open"), systemImage: "app.badge.checkmark") {
+					AppHaptics.action()
 					UIApplication.openApp(with: id)
 				}
 			}
 			Button(.localized("Install"), systemImage: "square.and.arrow.down") {
+				AppHaptics.action()
 				InstallQueue.shared.enqueue(app)
 			}
 			Button(.localized("Re-sign"), systemImage: "signature") {
+				AppHaptics.action()
 				Presentation.afterDismiss { selectedSigningAppPresenting = AnyApp(base: app) }
 			}
 			Button(.localized("Export"), systemImage: "square.and.arrow.up") {
+				AppHaptics.action()
 				InstallQueue.shared.enqueue(app, exporting: true)
 			}
 		} else {
 			Button(.localized("Install"), systemImage: "square.and.arrow.down") {
+				AppHaptics.action()
 				InstallQueue.shared.enqueue(app)
 			}
 			Button(.localized("Sign"), systemImage: "signature") {
+				AppHaptics.action()
 				Presentation.afterDismiss { selectedSigningAppPresenting = AnyApp(base: app) }
 			}
 		}
@@ -209,7 +221,7 @@ extension LibraryCellView {
 		Group {
 			if app.isSigned {
 				Button {
-					NBHaptic.tap()
+					AppHaptics.action()
 					InstallQueue.shared.enqueue(app)
 				} label: {
 					FRExpirationPillView(
@@ -220,7 +232,7 @@ extension LibraryCellView {
 				}
 			} else {
 				Button {
-					NBHaptic.tap()
+					AppHaptics.action()
 					selectedSigningAppPresenting = AnyApp(base: app)
 				} label: {
 					FRExpirationPillView(

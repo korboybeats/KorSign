@@ -20,6 +20,9 @@ final class AppInstaller: ObservableObject {
 		case exported(URL?)
 	}
 
+	var onDownloadStarted: (() -> Void)?
+	private(set) var hasStartedDownload = false
+
 	let app: AppInfoPresentable
 	let viewModel: InstallerStatusViewModel
 
@@ -32,6 +35,7 @@ final class AppInstaller: ObservableObject {
 	private let _serverMethod = UserDefaults.standard.integer(forKey: "Feather.serverMethod")
 	private let _useShareSheet = UserDefaults.standard.bool(forKey: "Feather.useShareSheetForArchiving")
 
+	private var _preparationTask: Task<(package: InstallationArchive, exported: URL?), Error>?
 	private var _server: ServerInstaller?
 	private var _progressTask: Task<Void, Never>?
 	private var _statusObserver: AnyCancellable?
@@ -86,6 +90,7 @@ final class AppInstaller: ObservableObject {
 			return
 		}
 
+		prepare()
 		_statusObserver = viewModel.$status
 			.receive(on: DispatchQueue.main)
 			.sink { [weak self] in self?._handle($0) }
@@ -97,6 +102,9 @@ final class AppInstaller: ObservableObject {
 	func stop() {
 		FileLogger.log("installation stopped by caller", category: "install")
 		_hasFinished = true
+		_preparationTask?.cancel()
+		_preparationTask = nil
+		hasStartedDownload = false
 		_workspaceDiagnostic?.stop()
 		_workspaceDiagnostic = nil
 		_completion = nil
@@ -110,6 +118,26 @@ final class AppInstaller: ObservableObject {
 
 	// MARK: Pipeline
 
+	/// Prepares an archive without starting a device transfer or installation.
+	func prepare() {
+		guard _installationMethod == 1, !_isSharing, !_hasFinished, _preparationTask == nil else { return }
+		_preparationTask = Task {
+			await ArchivePreparationGate.shared.acquire()
+			do {
+				try Task.checkCancellation()
+				FileLogger.log("archive preparation started", category: "install-preparation")
+				let result = try await _package()
+				try Task.checkCancellation()
+				await ArchivePreparationGate.shared.release()
+				FileLogger.log("archive preparation ready", category: "install-preparation")
+				return result
+			} catch {
+				await ArchivePreparationGate.shared.release()
+				throw error
+			}
+		}
+	}
+
 	private func _run() async {
 		let keepAlive = BackgroundTaskManager(
 			taskName: "Install",
@@ -120,7 +148,15 @@ final class AppInstaller: ObservableObject {
 		defer { keepAlive.stop() }
 
 		do {
-			let (package, exported) = try await _package()
+			prepare()
+			let prepared: (package: InstallationArchive, exported: URL?)
+			if let task = _preparationTask {
+				prepared = try await task.value
+				_preparationTask = nil
+			} else {
+				prepared = try await _package()
+			}
+			let (package, exported) = prepared
 			defer { withExtendedLifetime(package) {} }
 			guard !_hasFinished else { return }
 
@@ -131,12 +167,15 @@ final class AppInstaller: ObservableObject {
 
 			switch _installationMethod {
 			case 1:
-				try await InstallationProxy(viewModel: viewModel)
+				try await InstallationProxy(viewModel: viewModel, diagnosticLog: {
+					FileLogger.log($0, category: "idevice-payload")
+				})
 					.install(at: package.url, suspend: app.identifier == Bundle.main.bundleIdentifier!)
 			default:
 				await _serveForOTA(package)
 			}
 		} catch {
+			_preparationTask = nil
 			_progressTask?.cancel()
 			_finish(.failure(error))
 		}
@@ -147,10 +186,11 @@ final class AppInstaller: ObservableObject {
 		let handler = ArchiveHandler(app: app, viewModel: viewModel)
 		let isSharing = _isSharing
 		let useShareSheet = _useShareSheet
+		let compressForTransfer = _installationMethod == 1 && !isSharing
 
 		return try await Task.detached(priority: .userInitiated) {
 			try await handler.move()
-			let package = try await handler.archive()
+			let package = try await handler.archive(compressForTransfer: compressForTransfer)
 
 			guard isSharing else { return (package, nil) }
 			return (package, try await handler.moveToArchive(package.url, shouldOpen: !useShareSheet))
@@ -207,6 +247,10 @@ final class AppInstaller: ObservableObject {
 		case .sendingPayload where _installationMethod == 0:
 			isPresentingFallbackPage = false
 			_advanceOTA(to: .downloading)
+			if !hasStartedDownload {
+				hasStartedDownload = true
+				onDownloadStarted?()
+			}
 		case .installing where _installationMethod == 0:
 			_advanceOTA(to: .verifying)
 		case .completed(let result):
@@ -280,6 +324,7 @@ final class AppInstaller: ObservableObject {
 	private func _finish(_ result: Result<Outcome, Error>) {
 		guard !_hasFinished else { return }
 		_hasFinished = true
+		hasStartedDownload = false
 		_workspaceDiagnostic?.stop()
 		_workspaceDiagnostic = nil
 		_pendingInstallURL = nil
@@ -306,6 +351,7 @@ final class AppInstaller: ObservableObject {
 		let probe = _installProbe
 		_progressTask = Task { [weak self] in
 			var lastEvidence = ""
+			let pollingStarted = ProcessInfo.processInfo.systemUptime
 			while !Task.isCancelled {
 				guard let identifier = self?.app.identifier else { break }
 				let evidence = await Task.detached(priority: .utility) { probe.read(identifier) }.value
@@ -341,6 +387,7 @@ final class AppInstaller: ObservableObject {
 					self.viewModel.installProgress = min(0.99, max(0, (raw - 0.6) / 0.3))
 				}
 				if self._ota.timedOut(at: ProcessInfo.processInfo.systemUptime) {
+					FileLogger.log("installation timeout phase=\(self._ota.phase) elapsed=\(ProcessInfo.processInfo.systemUptime - pollingStarted) appState=\(UIApplication.shared.applicationState.rawValue) lastEvidence=\(lastEvidence); manifest/HEAD probes do not prove IPA download or user acceptance", category: "install")
 					let message: String
 					switch self._ota.phase {
 					case .waiting: message = .localized("Installation didn't start. The signed app has been kept. Try installing it again.")

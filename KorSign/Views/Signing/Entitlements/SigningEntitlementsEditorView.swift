@@ -78,7 +78,7 @@ struct SigningEntitlementsEditorView: View {
 			if !_hasLoaded || _saveFailed {
 				Section {
 					Text(_saveFailed ? .localized("Changes have not been saved.") : .localized("The entitlements file could not be loaded."))
-					Button(.localized("Retry")) { if _hasLoaded { _save() } else { _load() } }
+					Button(.localized("Retry")) { AppHaptics.action(); if _hasLoaded { _save() } else { _load() } }
 				}
 			}
 			ForEach(_keys, id: \.self) { key in
@@ -120,10 +120,11 @@ struct SigningEntitlementsEditorView: View {
 		) {
 			if _detailMatch == .differs, let key = _detailKey {
 				Button(.localized("Reset to Certificate Value")) {
+					AppHaptics.action()
 					_resetToCertificateValue(key)
 				}
 			}
-			Button(.localized("Cancel"), role: .cancel) {}
+			Button(.localized("Cancel"), role: .cancel) { AppHaptics.action();}
 		} message: {
 			Text(_detailMatch == .missing
 				? .localized("Not granted by the selected certificate's provisioning profile")
@@ -139,6 +140,7 @@ extension SigningEntitlementsEditorView {
 	private var _toolbar: some ToolbarContent {
 		ToolbarItem(placement: .topBarLeading) {
 			Button(_editMode.isEditing ? .localized("Done") : .localized("Select")) {
+				AppHaptics.action()
 				_toggleSelectMode()
 			}
 		}
@@ -153,6 +155,7 @@ extension SigningEntitlementsEditorView {
 		} else {
 			ToolbarItem(placement: .topBarTrailing) {
 				Button {
+					AppHaptics.action()
 					_flaggedOnly.toggle()
 				} label: {
 					Image(systemName: "line.3.horizontal.decrease")
@@ -173,18 +176,21 @@ extension SigningEntitlementsEditorView {
 	@ViewBuilder
 	private var _selectionActions: some View {
 		Button(.localized("Copy"), systemImage: "doc.on.doc") {
+			AppHaptics.action()
 			_clipboard.set(_dict.filter { _selectedKeys.contains($0.key) })
 			_toggleSelectMode()
 		}
 		.disabled(_selectedKeys.isEmpty)
 
 		Button(.localized("Reset to Certificate Value"), systemImage: "arrow.uturn.backward") {
+			AppHaptics.action()
 			_resetToCertificateValues(_selectedKeys)
 			_toggleSelectMode()
 		}
 		.disabled(_selectedKeys.isDisjoint(with: _mismatchedKeys))
 
 		Button(.localized("Delete"), systemImage: "trash", role: .destructive) {
+			AppHaptics.action()
 			_delete(_selectedKeys)
 			_toggleSelectMode()
 		}
@@ -193,9 +199,11 @@ extension SigningEntitlementsEditorView {
 		Divider()
 
 		Button(.localized("Select All"), systemImage: "checkmark.circle") {
+			AppHaptics.action()
 			_selectedKeys = Set(_keys)
 		}
 		Button(.localized("Deselect All"), systemImage: "circle") {
+			AppHaptics.action()
 			_selectedKeys.removeAll()
 		}
 		.disabled(_selectedKeys.isEmpty)
@@ -204,24 +212,29 @@ extension SigningEntitlementsEditorView {
 	@ViewBuilder
 	private var _addMenu: some View {
 		Button(.localized("Add Entry"), systemImage: "plus") {
+			AppHaptics.action()
 			_present(.string)
 		}
 		Button(.localized("Add Dictionary"), systemImage: "curlybraces") {
+			AppHaptics.action()
 			_present(.dictionary)
 		}
 		Button(.localized("Add Array"), systemImage: "list.bullet") {
+			AppHaptics.action()
 			_present(.array)
 		}
 		if !_otherFiles.isEmpty {
 			Menu(.localized("Merge From Library")) {
 				ForEach(_otherFiles) { other in
 					Button(other.name) {
+						AppHaptics.action()
 						if let dict = _manager.load(other) { _merge(dict) }
 					}
 				}
 			}
 		}
 		Button(.localized("Import File"), systemImage: "square.and.arrow.down") {
+			AppHaptics.action()
 			DocumentPicker.open([.xmlPropertyList, .plist, .entitlements, .mobileProvision, .json], folder: .entitlements) { urls in
 				guard let url = urls.first else { return }
 				_importMerge(from: url)
@@ -229,18 +242,21 @@ extension SigningEntitlementsEditorView {
 		}
 		if !_clipboard.entries.isEmpty {
 			Button(.localized("Paste"), systemImage: "doc.on.clipboard") {
+				AppHaptics.action()
 				_merge(_clipboard.entries)
 			}
 		}
 		Divider()
 
 		Button(.localized("Edit Raw"), systemImage: "chevron.left.forwardslash.chevron.right") {
+			AppHaptics.action()
 			_showsRaw = true
 			_isAddingPresenting = true
 		}
 
 		if !_mismatchedKeys.isEmpty {
 			Button(.localized("Reset All Mismatched"), systemImage: "arrow.triangle.2.circlepath") {
+				AppHaptics.action()
 				_resetAllMismatched()
 			}
 		}
@@ -313,6 +329,7 @@ extension SigningEntitlementsEditorView {
 		let isSelected = _selectedKeys.contains(key)
 
 		Button {
+			AppHaptics.action()
 			if isSelected { _selectedKeys.remove(key) } else { _selectedKeys.insert(key) }
 		} label: {
 			HStack {
@@ -330,6 +347,7 @@ extension SigningEntitlementsEditorView {
 			if let kind = PlistValueKind.kind(for: value) {
 				HStack {
 					NavigationLink {
+                Group {
 						if kind.isContainer {
 							PlistNodeView(title: key, value: value) { newValue in
 								_dict[key] = newValue
@@ -347,7 +365,9 @@ extension SigningEntitlementsEditorView {
 								_save()
 							}
 						}
-					} label: {
+
+                }.navigationHaptics()
+            } label: {
 						PlistValueRow(key: key, value: value)
 					}
 					_matchButton(key: key, value: value)
@@ -358,6 +378,7 @@ extension SigningEntitlementsEditorView {
 		}
 		.swipeActions(edge: .trailing) {
 			Button(role: .destructive) {
+				AppHaptics.action()
 				_dict.removeValue(forKey: key)
 				_save()
 			} label: {
@@ -373,6 +394,7 @@ extension SigningEntitlementsEditorView {
 			let match = PlistDiff.match(key: key, value: value, against: granted)
 			if match != .matches {
 				Button {
+					AppHaptics.action()
 					_detailKey = key
 				} label: {
 					Image(systemName: match == .missing ? "exclamationmark.triangle.fill" : "arrow.triangle.2.circlepath.circle.fill")

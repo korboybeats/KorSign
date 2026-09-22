@@ -75,6 +75,7 @@ extension CertificatesAddView {
 		action: @escaping () -> Void
 	) -> some View {
 		Button(title) {
+			AppHaptics.action()
 			action()
 		}
 		.foregroundColor(file == nil ? .accentColor : .disabled())

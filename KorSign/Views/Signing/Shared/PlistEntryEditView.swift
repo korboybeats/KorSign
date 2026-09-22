@@ -155,6 +155,7 @@ struct PlistEntryEditView: View {
 				_valueField
 				if _match == .differs, _referenceValueIsEditable, let reference {
 					Button(reference.resetTitle) {
+						AppHaptics.action()
 						_resetToReferenceValue()
 					}
 				}

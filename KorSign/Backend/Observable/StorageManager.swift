@@ -205,11 +205,13 @@ extension StorageManager {
 			return
 		}
 
-		let staging = fm.downloadStaging.lastPathComponent
+		let ownedPrefixes = ["FeatherImport_", "FeatherSigning_", "FeatherInstall_", "FeatherArchive_",
+			"FeatherZipExtract_", "FeatherTweak_", "FeatherExport_", "FeatherShared_", "TweakAnalyze_", "CertUpload_",
+			"RyukBackup_", "RyukBackupPack_"]
 		for item in items {
-			// Startup only, before operations begin. Pending downloads have no expiry:
-			// age alone cannot establish that an input is no longer needed.
-			guard item.lastPathComponent != staging else { continue }
+			// Background URLSession can still own temporary files across app launches.
+			// Only retire our own work directories; preserve downloads and system files.
+			guard ownedPrefixes.contains(where: { item.lastPathComponent.hasPrefix($0) }) else { continue }
 			try? fm.removeItem(at: item)
 		}
 	}

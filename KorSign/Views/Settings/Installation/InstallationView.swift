@@ -42,9 +42,10 @@ struct InstallationView: View {
 		}
 		.alert(.localized("Advanced Installation Method"), isPresented: $_showMethodChangedAlert) {
 			Button(.localized("Switch Back"), role: .destructive) {
+				AppHaptics.action()
 				_installationMethod = 0
 			}
-			Button(.localized("OK"), role: .cancel) {}
+			Button(.localized("OK"), role: .cancel) { AppHaptics.action();}
 		} message: {
 			Text(.localized(
 				"This installation method is intended for advanced users only!\n\nIt requires a VPN and a pairing file from a PC.\n\nIts recommended you go back to the server installation method."

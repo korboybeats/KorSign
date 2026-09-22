@@ -19,6 +19,7 @@ struct DetailedMiniDownloadItemView: View {
 
             if !download.isManual {
                 Button(action: {
+                    AppHaptics.action()
                     DownloadNavigationHelper.handleAppNameTap(for: download)
                 }) {
                     Text(download.fileName)
@@ -43,6 +44,7 @@ struct DetailedMiniDownloadItemView: View {
 
             if download.canCancel {
                 Button {
+                    AppHaptics.action()
                     DownloadManager.shared.cancelDownload(download)
                 } label: {
                     Image(systemName: "xmark.circle.fill")
@@ -72,6 +74,7 @@ struct DownloadItemView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     if !download.isManual {
                         Button(action: {
+                            AppHaptics.action()
                             DownloadNavigationHelper.handleAppNameTap(for: download)
                         }) {
                             Text(download.fileName)
@@ -102,6 +105,7 @@ struct DownloadItemView: View {
 
                 if download.canCancel {
                     Button {
+                        AppHaptics.action()
                         DownloadManager.shared.cancelDownload(download)
                     } label: {
                         Image(systemName: "xmark.circle.fill")

@@ -5,6 +5,7 @@
 //  Created by samara on 23.03.2025.
 //
 import SwiftUI
+import NimbleExtensions
 
 struct TabbarView: View {
     // @ObservedObject (not @StateObject) so we share DownloadButtonView's instance
@@ -13,6 +14,7 @@ struct TabbarView: View {
     @ObservedObject private var _tweakManager = TweakManager.shared
     @ObservedObject private var _tabPrefs = TabBarPreferences.shared
     @AppStorage("Feather.showSourcesUpdateBadge") private var _showSourcesUpdateBadge: Bool = true
+
 
     private var _visibleDefaultTabs: [TabEnum] {
         _tabPrefs.visibleTabs
@@ -48,5 +50,6 @@ struct TabbarView: View {
                     .tag(tab)
             }
         }
+        .background(TabTouchHaptics().frame(width: 0, height: 0))
     }
 }

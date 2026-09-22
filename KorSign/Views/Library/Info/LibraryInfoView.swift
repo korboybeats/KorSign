@@ -31,6 +31,7 @@ struct LibraryInfoView: View {
 				Section {
 					_linksSection(for: app)
 					Button(.localized("Open in Files"), systemImage: "folder") {
+						AppHaptics.action()
 						UIApplication.open(Storage.shared.getUuidDirectory(for: app)!.toSharedDocumentsURL()!)
 					}
 				}
@@ -67,6 +68,7 @@ extension LibraryInfoView {
 			}
 
 			NavigationLink {
+                Group {
 				SigningDescriptionView(
 					title: .localized("Description"),
 					initialValue: LinkTagParser.strip(from: _displayedDescription) ?? "",
@@ -79,7 +81,9 @@ extension LibraryInfoView {
 						_displayedDescription = saved
 					}
 				)
-			} label: {
+
+                }.navigationHaptics()
+            } label: {
 				LabeledContent(.localized("Description")) {
 					Text(LinkTagParser.strip(from: _displayedDescription) ?? .localized("None"))
 						.lineLimit(1)
@@ -108,11 +112,17 @@ extension LibraryInfoView {
 	private func _bundleSection(for app: AppInfoPresentable) -> some View {
 		NBSection(.localized("Bundle")) {
 			NavigationLink(.localized("Alternative Icons")) {
+                Group {
 				SigningAlternativeIconView(app: app, appIcon: .constant(nil), isModifing: false)
-			}
+
+                }.navigationHaptics()
+            }
 			NavigationLink(.localized("Frameworks & PlugIns")) {
+                Group {
 				SigningFrameworksView(app: app, options: .constant(nil))
-			}
+
+                }.navigationHaptics()
+            }
 		}
 	}
 	
@@ -120,8 +130,11 @@ extension LibraryInfoView {
 	private func _executableSection(for app: AppInfoPresentable) -> some View {
 		NBSection(.localized("Executable")) {
 			NavigationLink(.localized("Dylibs")) {
+                Group {
 				SigningDylibView(app: app, options: .constant(nil))
-			}
+
+                }.navigationHaptics()
+            }
 		}
 	}
 	
@@ -129,6 +142,7 @@ extension LibraryInfoView {
 	private func _linksSection(for app: AppInfoPresentable) -> some View {
 		ForEach(LinkTagParser.links(in: _displayedDescription)) { link in
 			Button {
+				AppHaptics.action()
 				link.tag.open(link.url)
 			} label: {
 				Label {

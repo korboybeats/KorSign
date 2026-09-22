@@ -7,15 +7,18 @@ import tempfile
 source = Path('KorSign/Backend/Observable/SelfUpdateManager.swift').read_text()
 parser = source[source.index('\tprivate static func parse('):source.index('\n\t// MARK: - Version compare')]
 model = source[source.index('struct SelfUpdateRelease:'):source.index('\nenum SelfUpdatePhase:')]
-model = model.replace('var isInstalled: Bool { SelfUpdateManager.compare(version, Bundle.main.version) == .orderedSame }', '')
+model = model.replace('var isInstalled: Bool { SelfUpdateManager.compare(version, SelfUpdateManager.installedVersion) == .orderedSame }', '')
 assert 'private let _repo = "korboybeats/KorSign"' in source
 assert '"KorSign.selfUpdateIgnored"' in source
 program = '''import Foundation
 struct Bundle {
     static var main = Bundle()
+    var version = "3.0.1"
+    var build = "1"
+    func object(forInfoDictionaryKey key: String) -> Any? { build }
     var bundleIdentifier: String? = "com.korboy.korsign"
 }
-''' + model + '\nstruct Parser {\n' + parser.replace('private static func parse', 'static func parse') + '''
+''' + model + '\nstruct Parser {\n' + parser.replace('private static func parse', 'static func parse') + source[source.index('\tstatic func compare('):source.index('\n\t// MARK: - Install')] + '''
 }
 let main = "https://github.com/korboybeats/KorSign/releases/download/v3.0.1/KorSign.ipa"
 let dev = "https://github.com/korboybeats/KorSign/releases/download/v3.0.1/KorSign-Dev.ipa"
@@ -32,7 +35,17 @@ assert(Parser.parse(release)?.downloadURL == nil)
 release["assets"] = []
 assert(Parser.parse(release)?.downloadURL == nil)
 assert(Parser.parse([:]) == nil)
-print("Self-update release checks passed")
+assert(Parser.compare("3.0.1-r2", "3.0.1-r1") == .orderedDescending)
+assert(Parser.compare("3.0.2", "3.0.1-r99") == .orderedDescending)
+assert(Parser.compare("3.0.1-r1", "3.0.1") == .orderedDescending)
+assert(Parser.installedVersion == "3.0.1-r1")
+Bundle.main.build = "legacy-sha"
+assert(Parser.installedVersion == "3.0.1")
+release["tag_name"] = "v3.0.1-r1"
+assert(Parser.parse(release)?.isSemver == true)
+assert(!Parser.isSemver("3.0.1-beta"))
+assert(!Parser.isSemver("3.0.1-r0"))
+print("Self-update release and revision checks passed")
 '''
 with tempfile.TemporaryDirectory() as directory:
     swift = Path(directory) / 'main.swift'
@@ -57,6 +70,13 @@ with tempfile.TemporaryDirectory() as directory:
     subprocess.run(['sh', 'update-repo.sh'], cwd=root, env=env, check=True)
     feed = (root/'app-repo.json').read_bytes()
     assert json.loads(feed)['apps'][0]['downloadURL'] == 'https://example.test/main'
+    release['tag_name'] = 'v3.0.1-r1'
+    (root/'release.json').write_text(json.dumps(release))
+    subprocess.run(['sh', 'update-repo.sh'], cwd=root, env=env, check=True)
+    feed = (root/'app-repo.json').read_bytes()
+    app = json.loads(feed)['apps'][0]
+    assert app['version'] == '3.0.1' and app['buildVersion'] == '1'
+    assert app['versions'][0]['buildVersion'] == '1'
     release['assets'].pop()
     (root/'release.json').write_text(json.dumps(release))
     result = subprocess.run(['sh', 'update-repo.sh'], cwd=root, env=env, capture_output=True)

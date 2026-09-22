@@ -11,6 +11,8 @@ options:
   force: true
 
 manual:
+  - name: "ZIPFoundation"
+    file: "ZIPFoundation/LICENSE"
   - source: https://github.com/jkcoxson/idevice
     name: idevice
     body: |-

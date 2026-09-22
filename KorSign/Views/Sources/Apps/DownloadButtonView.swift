@@ -14,10 +14,28 @@ import CoreData
 // MARK: - Tab Selection Observer
 class TabSelectionObserver: ObservableObject {
 	static let shared = TabSelectionObserver()
-	@Published var selectedTab: TabEnum = TabBarPreferences.shared.resolvedLaunchTab
+	@Published var hasPendingLaunchImport = UserDefaults.standard.bool(forKey: "KorSign.openFilePickerOnLaunch")
+	@Published var selectedTab: TabEnum = UserDefaults.standard.bool(forKey: "KorSign.openFilePickerOnLaunch") ? .library : TabBarPreferences.shared.resolvedLaunchTab
 	@Published var highlightedAppUUID: String?
 	@Published var sourcesRetapped: Bool = false
 	
+    var isImportPickerPresented = false
+    private var didEnterBackground = false
+
+    func handleScenePhase(_ phase: ScenePhase, installationActive: Bool = false) {
+        if phase == .background {
+            didEnterBackground = true
+        } else if phase == .active {
+            let isReopening = didEnterBackground
+            didEnterBackground = false
+            guard isReopening, !installationActive,
+                  UserDefaults.standard.bool(forKey: "KorSign.openFilePickerOnReopen"),
+                  !isImportPickerPresented else { return }
+            selectedTab = .library
+            hasPendingLaunchImport = true
+        }
+    }
+
 	private var highlightTimer: Timer?
 	
 	func navigateToLibraryWithHighlight(uuid: String) {
@@ -127,6 +145,7 @@ struct DownloadButtonView: View {
 				}
 				.onTapGesture {
 					if currentDownload.canCancel {
+                        AppHaptics.action()
 						downloadManager.cancelDownload(currentDownload)
 					}
 				}
@@ -135,7 +154,7 @@ struct DownloadButtonView: View {
 				HStack(spacing: 8) {
 					if installedApp.hasUpdate {
 						Button {
-							NBHaptic.tap()
+							AppHaptics.action()
 							if let url = app.currentDownloadUrl {
                                 _ = downloadManager.startDownload(from: url, id: app.currentUniqueId, appName: app.currentName, appDescription: app.localizedDescription)
 							}
@@ -153,7 +172,7 @@ struct DownloadButtonView: View {
 						.transition(.scale.combined(with: .opacity))
 					} else if installedApp.isDowngrade {
 						Button {
-							NBHaptic.tap()
+							AppHaptics.action()
 							if let url = app.currentDownloadUrl {
 								_ = downloadManager.startDownload(from: url, id: app.currentUniqueId, appName: app.currentName, appDescription: app.localizedDescription)
 							}
@@ -175,6 +194,7 @@ struct DownloadButtonView: View {
 						.transition(.scale.combined(with: .opacity))
 					} else {
 						Button {
+							AppHaptics.navigation()
 							tabSelection.navigateToLibraryWithHighlight(uuid: installedApp.uuid)
 						} label: {
 							Text(.localized(installedApp.type == .imported ? "Imported" : "Signed"))
@@ -193,6 +213,7 @@ struct DownloadButtonView: View {
 					Menu {
 						if installedApp.hasUpdate || installedApp.isDowngrade || !installedApp.hasUpdate && !installedApp.isDowngrade {
 							Button {
+								AppHaptics.navigation()
 								tabSelection.navigateToLibraryWithHighlight(uuid: installedApp.uuid)
 							} label: {
 								Label(.localized("View in Library"), systemImage: "square.grid.2x2")
@@ -200,7 +221,7 @@ struct DownloadButtonView: View {
 						}
 
 						Button {
-							NBHaptic.tap()
+							AppHaptics.action()
 							if let url = app.currentDownloadUrl {
                                 _ = downloadManager.startDownload(from: url, id: app.currentUniqueId, appName: app.currentName, appDescription: app.localizedDescription)
 							}
@@ -219,7 +240,7 @@ struct DownloadButtonView: View {
 				}
 			} else if !isCheckingInstalled {
 				Button {
-					NBHaptic.tap()
+					AppHaptics.action()
 					if let url = app.currentDownloadUrl {
 						_ = downloadManager.startDownload(from: url, id: app.currentUniqueId, appName: app.currentName, appDescription: app.localizedDescription)
 					}

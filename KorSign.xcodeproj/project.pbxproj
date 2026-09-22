@@ -296,7 +296,7 @@
 			packageReferences = (
 				3371F5152DA91FDC00281AC6 /* XCLocalSwiftPackageReference "Zsign" */,
 				3371F6F52DA9EBA500281AC6 /* XCRemoteSwiftPackageReference "Zip" */,
-				FADE000100000000000F0003 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+				FADE000100000000000F0003 /* XCLocalSwiftPackageReference "ZIPFoundation" */,
 				33CF13372DB5ACFB0021D4C5 /* XCRemoteSwiftPackageReference "SWCompression" */,
 				3305BBAA2DB8944200660D45 /* XCRemoteSwiftPackageReference "vapor" */,
 				330F68FF2DC03DF400D8C35D /* XCLocalSwiftPackageReference "NimbleKit" */,
@@ -526,7 +526,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
 				COMPRESS_PNG_FILES = NO;
-				CURRENT_PROJECT_VERSION = 2dbf78cc8947292c963bcef71fbde7ffad2180b4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = S4Q99652S6;
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = S4Q99652S6;
@@ -596,7 +596,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
 				COMPRESS_PNG_FILES = NO;
-				CURRENT_PROJECT_VERSION = 2dbf78cc8947292c963bcef71fbde7ffad2180b4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEPLOYMENT_POSTPROCESSING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
@@ -727,7 +727,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
 				COMPRESS_PNG_FILES = NO;
-				CURRENT_PROJECT_VERSION = 2dbf78cc8947292c963bcef71fbde7ffad2180b4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = S4Q99652S6;
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = S4Q99652S6;
@@ -853,7 +853,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
 				COMPRESS_PNG_FILES = NO;
-				CURRENT_PROJECT_VERSION = 2dbf78cc8947292c963bcef71fbde7ffad2180b4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEPLOYMENT_POSTPROCESSING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
@@ -917,7 +917,7 @@
 				CODE_SIGN_ENTITLEMENTS = KorSignWidgetExtension/KorSignWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 2dbf78cc8947292c963bcef71fbde7ffad2180b4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = S4Q99652S6;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -958,7 +958,7 @@
 				CODE_SIGN_ENTITLEMENTS = KorSignWidgetExtension/KorSignWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 2dbf78cc8947292c963bcef71fbde7ffad2180b4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = S4Q99652S6;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -999,7 +999,7 @@
 				CODE_SIGN_ENTITLEMENTS = KorSignWidgetExtension/KorSignWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 2dbf78cc8947292c963bcef71fbde7ffad2180b4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = S4Q99652S6;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1041,7 +1041,7 @@
 				CODE_SIGN_ENTITLEMENTS = KorSignWidgetExtension/KorSignWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 2dbf78cc8947292c963bcef71fbde7ffad2180b4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = S4Q99652S6;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1130,6 +1130,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = IDeviceKitten;
 		};
+		FADE000100000000000F0003 /* XCLocalSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ZIPFoundation;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1173,14 +1177,7 @@
 				minimumVersion = 4.8.6;
 			};
 		};
-		FADE000100000000000F0003 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.9.19;
-			};
-		};
+
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1251,7 +1248,7 @@
 		};
 		FADE000100000000000F0002 /* ZIPFoundation */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FADE000100000000000F0003 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			package = FADE000100000000000F0003 /* XCLocalSwiftPackageReference "ZIPFoundation" */;
 			productName = ZIPFoundation;
 		};
 /* End XCSwiftPackageProductDependency section */

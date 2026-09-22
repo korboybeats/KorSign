@@ -13,7 +13,7 @@ manifest = compute[compute.index('\tvar installManifest:'):]
 resolver = (root / 'KorSign/Backend/Server/ManifestService.swift').read_text()
 # Stub only the external HTTP probe; metadata/URL generation remains production code.
 resolver = resolver[:resolver.index('\tprivate static func _serves')] + '\tprivate static func _serves(_ url: URL) async -> Bool { false }\n}'
-pipeline = installer[installer.index('\tprivate func _run()'):installer.index('\tprivate func _serveForOTA(')]
+pipeline = installer[installer.index('\tfunc prepare()'):installer.index('\tprivate func _serveForOTA(')]
 # Substitute only the test executable's missing application bundle identity.
 pipeline = pipeline.replace('Bundle.main.bundleIdentifier!', '"fixture.host"')
 for module in ['UIKit.UIApplication', 'Zip', 'IDeviceSwift', 'Vapor', 'NIOSSL', 'NIOTLS']:
@@ -44,12 +44,14 @@ final class Storage {
     func getAppDirectory(for app: AppInfoPresentable) -> URL? { MainActor.preconditionIsolated(); return sourceDirectory }
 }
 enum SigningFileHandlerError: Error { case appNotFound }
-enum ZipCompression: CaseIterable { case normal }
+enum ZipCompression: CaseIterable { case NoCompression, BestSpeed, DefaultCompression, BestCompression }
 enum AppArchiver {
     static var shouldFail = false
     static var lastDestination: URL?
+    static var lastCompression: ZipCompression?
     static func zip(payload: URL, to url: URL, compression: ZipCompression, progress: (Double) -> Void) throws {
         lastDestination = url
+        lastCompression = compression
         try Data("fixture".utf8).write(to: url)
         if shouldFail { throw SigningFileHandlerError.appNotFound }
     }
@@ -152,11 +154,11 @@ extension ServerInstaller {
 
 stubs += '\nextension ServerInstaller {\n' + manifest + resolver + '\n'
 
-pipeline_stubs = r'''
+pipeline_stubs = (root / 'KorSign/Backend/Observable/ArchivePreparationGate.swift').read_text() + r'''
 @MainActor final class InstallationProxy {
     static var shouldFail = false
     static var reads = 0
-    init(viewModel: InstallerStatusViewModel) {}
+    init(viewModel: InstallerStatusViewModel, diagnosticLog: @escaping @Sendable (String) -> Void) {}
     func install(at url: URL, suspend: Bool) async throws {
         try await Task.sleep(nanoseconds: 50_000_000)
         assert(try! Data(contentsOf: url) == Data("fixture".utf8))
@@ -168,6 +170,7 @@ pipeline_stubs = r'''
     enum Outcome { case exported(URL?) }
     let app: AppInfoPresentable = TestApp()
     let viewModel = InstallerStatusViewModel()
+    var _preparationTask: Task<(package: InstallationArchive, exported: URL?), Error>?
     var _hasFinished = false
     var _isSharing = false
     let _useShareSheet = true
@@ -204,6 +207,21 @@ checks = r'''
         let original = sourceDirectory.appendingPathComponent("original")
         try Data("original".utf8).write(to: original)
 
+        // Fast compression applies only to uncompressed transfer archives; exports and
+        // explicitly selected compression retain their existing behavior.
+        for selected in 0..<ZipCompression.allCases.count {
+            UserDefaults.standard.set(selected, forKey: "Feather.compressionLevel")
+            for transfer in [false, true] {
+                let handler = ArchiveHandler(app: TestApp(), viewModel: InstallerStatusViewModel())
+                try await handler.move()
+                let package = try await handler.archive(compressForTransfer: transfer)
+                assert(FileManager.default.fileExists(atPath: package.url.path))
+                let expected: ZipCompression = transfer && selected == 0 ? .BestSpeed : ZipCompression.allCases[selected]
+                assert(AppArchiver.lastCompression == expected)
+            }
+        }
+        UserDefaults.standard.set(0, forKey: "Feather.compressionLevel")
+
         // The returned owner survives the producer, including an async consumer's delay.
         var archive: InstallationArchive? = try await prepare(InstallerStatusViewModel())
         let folder = archive!.directory
@@ -217,6 +235,7 @@ checks = r'''
             InstallationProxy.shouldFail = fail
             let pipeline = PipelineCheck()
             await pipeline.run()
+            assert(AppArchiver.lastCompression == .BestSpeed)
             if fail { guard case .failure = pipeline.result else { fatalError("Lost install failure") } }
             try await waitRemoved(AppArchiver.lastDestination!.deletingLastPathComponent())
         }

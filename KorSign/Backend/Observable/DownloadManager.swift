@@ -83,6 +83,7 @@ class DownloadManager: NSObject, ObservableObject {
 
 	override init() {
 		super.init()
+		isAppInBackground = UIApplication.shared.applicationState != .active
 
 		let foregroundConfig = URLSessionConfiguration.default
 		foregroundConfig.timeoutIntervalForRequest = 300 // 5 min
@@ -110,6 +111,13 @@ class DownloadManager: NSObject, ObservableObject {
 		backgroundConfig.networkServiceType = .responsiveData
 
 		_backgroundSession = URLSession(configuration: backgroundConfig, delegate: self, delegateQueue: .main)
+		_backgroundSession.getAllTasks { [weak self] tasks in
+			DispatchQueue.main.async {
+				for case let task as URLSessionDownloadTask in tasks where task.state != .canceling && task.state != .completed {
+					_ = self?.getDownloadTask(by: task)
+				}
+			}
+		}
 
 		requestNotificationPermissions()
 
@@ -286,7 +294,7 @@ class DownloadManager: NSObject, ObservableObject {
 		let deadline = DispatchTime.now() + .milliseconds(500)
 
 		for download in downloads {
-			if let task = download.task, task.state == .running {
+			if let task = download.task, task.state == .running, !download.usesBackgroundSession {
 				saveGroup.enter()
 				task.cancel { resumeData in
 					download.resumeData = resumeData
@@ -489,12 +497,12 @@ class DownloadManager: NSObject, ObservableObject {
 
 	func showUIErrorMessage(for download: Download, error: NSError) {
 		DispatchQueue.main.async {
-			let generator = UINotificationFeedbackGenerator()
-			generator.notificationOccurred(.error)
+
+			AppHaptics.result(.error)
 
 			self.errorDelegate?.showUIErrorMessage(
 				title: "Failed to download ipa",
-				message: error.localizedDescription
+				message: "\(error.localizedDescription)\n\(error.domain) (\(error.code))" + ((error.userInfo[NSUnderlyingErrorKey] as? NSError).map { "\nUnderlying: \($0.domain) (\($0.code))" } ?? "")
 			)
 		}
 	}
@@ -509,9 +517,9 @@ class DownloadManager: NSObject, ObservableObject {
 	
 	// MARK: - Public Methods
 	
-	func startDownload(from url: URL, id: String = UUID().uuidString, appName: String? = nil, appDescription: String? = nil) -> Download {
+	func startDownload(from url: URL, id: String = UUID().uuidString, appName: String? = nil, appDescription: String? = nil, inBackground: Bool = false) -> Download {
         if !Thread.isMainThread {
-            return DispatchQueue.main.sync { self.startDownload(from: url, id: id, appName: appName, appDescription: appDescription) }
+            return DispatchQueue.main.sync { self.startDownload(from: url, id: id, appName: appName, appDescription: appDescription, inBackground: inBackground) }
         }
         if let existingDownload = downloads.first(where: { $0.url == url || $0.id == id }) {
             resumeDownload(existingDownload)
@@ -521,7 +529,7 @@ class DownloadManager: NSObject, ObservableObject {
         let download = Download(id: id, url: url, appName: appName, appDescription: appDescription)
         download.isActive = true
 
-		let session = isAppInBackground ? _backgroundSession! : _foregroundSession!
+		let session = (inBackground || isAppInBackground) ? _backgroundSession! : _foregroundSession!
 
 		var request = URLRequest(url: url)
 		request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
@@ -531,6 +539,7 @@ class DownloadManager: NSObject, ObservableObject {
 		request.setValue("gzip, deflate, br", forHTTPHeaderField: "Accept-Encoding")
 
 		let task = session.downloadTask(with: request)
+		if session === _backgroundSession { describeBackgroundTask(task, download: download) }
 		download.task = task
 		task.priority = 1.0
 		objectWillChange.send()
@@ -575,7 +584,12 @@ class DownloadManager: NSObject, ObservableObject {
 			FR.handlePackageFile(url, download: download) { result in
 				switch result {
 				case .failure(let error):
-					UINotificationFeedbackGenerator().notificationOccurred(.error)
+                    if download.importControl.isCancelled {
+                        completion?(nil)
+                        self.finishImport(of: download, succeeded: false)
+                        return
+                    }
+					AppHaptics.result(.error)
 
 					if let completion = completion {
 						// Caller owns the error UI; don't also fire the generic delegate alert.
@@ -607,6 +621,11 @@ class DownloadManager: NSObject, ObservableObject {
 			DispatchQueue.main.async { self.resumeDownload(download) }
 			return
 		}
+        guard downloads.contains(where: { $0 === download }) else { return }
+        if download.isImporting {
+            if download.importControl.setPaused(false) { download.isPaused = false; objectWillChange.send(); FileLogger.log("import resumed id=\(download.id)", category: "import-control") }
+            return
+        }
 		guard downloads.contains(where: { $0 === download }), download.isPaused,
 			!download.onlyArchiving, !download.isImporting, !download.isSigning,
 			download.pendingFileURL == nil else { return }
@@ -615,9 +634,10 @@ class DownloadManager: NSObject, ObservableObject {
 			return
 		}
 		let resumeData = download.resumeData ?? loadResumeData(for: download)
-		let session = isAppInBackground ? _backgroundSession! : _foregroundSession!
+		let session = (isAppInBackground || download.usesBackgroundSession) ? _backgroundSession! : _foregroundSession!
 		let previous = download.task
 		download.task = nil
+		previous?.taskDescription = nil
 		previous?.cancel()
 		let task: URLSessionDownloadTask
 		if let resumeData {
@@ -627,6 +647,7 @@ class DownloadManager: NSObject, ObservableObject {
 			download.progress = 0
 			download.bytesDownloaded = 0
 		}
+		if session === _backgroundSession { describeBackgroundTask(task, download: download) }
 		download.resumeData = nil
 		saveResumeData(for: download)
 		download.task = task
@@ -654,6 +675,11 @@ class DownloadManager: NSObject, ObservableObject {
 			DispatchQueue.main.async { self.pauseDownload(download) }
 			return
 		}
+        guard downloads.contains(where: { $0 === download }) else { return }
+        if download.isImporting {
+            if download.importControl.setPaused(true) { download.isPaused = true; objectWillChange.send(); FileLogger.log("import pause requested id=\(download.id)", category: "import-control") }
+            return
+        }
 		guard downloads.contains(where: { $0 === download }), !download.onlyArchiving,
 			!download.isImporting, !download.isSigning, download.pendingFileURL == nil else { return }
 		download.resumeAfterPause = false
@@ -661,6 +687,7 @@ class DownloadManager: NSObject, ObservableObject {
 		download.isPaused = true
 		download.isActive = false
 		download.isPausing = true
+		task.taskDescription = nil
 		task.cancel { resumeData in
 			DispatchQueue.main.async {
 				guard self.downloads.contains(where: { $0 === download }), download.task === task else { return }
@@ -678,6 +705,12 @@ class DownloadManager: NSObject, ObservableObject {
 			DispatchQueue.main.async { self.cancelDownload(download) }
 			return
 		}
+        guard downloads.contains(where: { $0 === download }) else { return }
+        if download.isImporting {
+            download.importControl.cancel(); download.isPaused = false; objectWillChange.send()
+            FileLogger.log("import stop requested id=\(download.id) accepted=\(download.importControl.isCancelled)", category: "import-control")
+            return
+        }
 		guard downloads.contains(where: { $0 === download }),
 			!download.isImporting, !download.isSigning else { return }
 		let task = download.task
@@ -688,6 +721,7 @@ class DownloadManager: NSObject, ObservableObject {
 		download.isActive = false
 		download.resumeData = nil
 		saveResumeData(for: download)
+		task?.taskDescription = nil
 		task?.cancel()
 		download.removeStagedFiles()
 
@@ -754,8 +788,37 @@ class DownloadManager: NSObject, ObservableObject {
 		return downloads.firstIndex(where: { $0.id == id })
 	}
 	
+	private func describeBackgroundTask(_ task: URLSessionDownloadTask, download: Download) {
+		download.usesBackgroundSession = true
+		var metadata = ["id": download.id, "url": download.url.absoluteString, "name": download.fileName]
+		metadata["description"] = download.appDescription
+		if let data = try? JSONEncoder().encode(metadata) {
+			task.taskDescription = String(data: data, encoding: .utf8)
+		}
+	}
+
 	func getDownloadTask(by task: URLSessionDownloadTask) -> Download? {
-		return downloads.first(where: { $0.task === task })
+		if let download = downloads.first(where: { $0.task === task }) { return download }
+		guard let data = task.taskDescription?.data(using: .utf8),
+			let metadata = try? JSONDecoder().decode([String: String].self, from: data),
+			let id = metadata["id"], let address = metadata["url"], let url = URL(string: address) else { return nil }
+		if let existing = downloads.first(where: { $0.id == id }) {
+			guard existing.task?.taskIdentifier == task.taskIdentifier else { return nil }
+			existing.task = task
+			return existing
+		}
+		let download = Download(
+			id: id, url: url, appName: metadata["name"], appDescription: metadata["description"]
+		)
+		download.task = task
+		download.usesBackgroundSession = true
+		download.isActive = task.state == .running
+		download.isPaused = task.state == .suspended
+		download.bytesDownloaded = max(0, task.countOfBytesReceived)
+		download.totalBytes = max(0, task.countOfBytesExpectedToReceive)
+		if download.totalBytes > 0 { download.progress = Double(download.bytesDownloaded) / Double(download.totalBytes) }
+		if !downloads.contains(where: { $0.id == id }) { downloads.append(download) }
+		return download
 	}
 	
 	var nonManualDownloads: [Download] {
@@ -774,7 +837,11 @@ class DownloadManager: NSObject, ObservableObject {
 		FR.handlePackageFile(url, download: dl) { result in
 			switch result {
 			case .failure(let error):
-				UINotificationFeedbackGenerator().notificationOccurred(.error)
+                if dl.importControl.isCancelled {
+                    self.finishImport(of: dl, succeeded: false)
+                    return
+                }
+				AppHaptics.result(.error)
 
 				if self.isAppInBackground {
 					self.sendCompletionNotification(for: dl, status: "❌ Import failed: \(error.localizedDescription)")
@@ -840,8 +907,8 @@ class DownloadManager: NSObject, ObservableObject {
 		endImport(for: download)
 
 		// Drop from activity tracking only once archiving completes (not on download finish).
-		if succeeded {
-			completedDownloadNames.append(download.fileName)
+		if succeeded || download.importControl.isCancelled {
+			if succeeded { completedDownloadNames.append(download.fileName) }
 			allActivityDownloads.removeValue(forKey: download.id)
 			finishedDownloadingIDs.remove(download.id)
 		}

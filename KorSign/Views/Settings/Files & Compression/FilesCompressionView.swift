@@ -48,7 +48,7 @@ struct FilesCompressionView: View {
 			}
 
 			Section {
-				NavigationLink(destination: ImportFoldersView()) {
+				NavigationLink(destination: ImportFoldersView().navigationHaptics()) {
 					Label(.localized("Import Folders"), systemImage: "folder")
 				}
 			} footer: {
@@ -56,13 +56,14 @@ struct FilesCompressionView: View {
 			}
 
 			Section {
-				Picker(.localized("Plus Button Import"), systemImage: "plus", selection: $_defaultImportAction) {
-					Text(.localized("Import from Files")).tag("files")
-					Text(.localized("Import Multiple Files")).tag("multipleFiles")
-					Text(.localized("Import from URL")).tag("url")
+				Picker(.localized("Import Action"), systemImage: "plus", selection: $_defaultImportAction) {
+					Text(.localized("Files")).tag("files")
+					Text(.localized("Multiple Files")).tag("multipleFiles")
+					Text(.localized("URL")).tag("url")
 				}
+				.pickerStyle(.menu)
 			} footer: {
-				Text(.localized("Choose what tapping the Library plus button opens. Touch and hold the button to choose another import option."))
+				Text(.localized("Used when you tap + or Import in Library. Touch and hold either button to choose and remember another action."))
 			}
 		}
     }

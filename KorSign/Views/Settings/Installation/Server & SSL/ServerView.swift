@@ -70,6 +70,7 @@ struct ServerView: View {
 			
 			Section {
 				Button(.localized("Update SSL Certificates"), systemImage: "arrow.down.doc") {
+					AppHaptics.action()
 					FR.downloadSSLCertificates(from: _serverPackUrl) { success in
 						if success {
 							DispatchQueue.main.async {

@@ -26,12 +26,10 @@ struct DownloadBubbleOverlayContainer: View {
             .zIndex(1)
             .transition(.scale(scale: 0.1).combined(with: .opacity))
 
-            if showOverlay {
-                DownloadOverlaySheetWrapper(
-                    downloadManager: downloadManager,
-                    isPresented: $showOverlay
-                )
-            }
+            DownloadOverlaySheetWrapper(
+                downloadManager: downloadManager,
+                isPresented: $showOverlay
+            )
         }
         // Animate only on active-count change, not every child update
         .animation(.spring(response: 0.5, dampingFraction: 0.7), value: hasActiveDownloads)
@@ -66,7 +64,20 @@ struct DownloadBubbleView: View {
                                 DownloadPhaseRing(phase: model.summary.phase, progress: model.summary.progress, size: 44)
 
                                 ZStack {
-                                    if model.summary.phase == .paused {
+                                    if let icon = model.appIcon {
+                                        VStack(spacing: 1) {
+                                            Text(verbatim: "\(Int(model.summary.progress * 100))")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundColor(.primary)
+                                                .id(Int(model.summary.progress * 100))
+
+                                            Image(uiImage: icon)
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(width: 18, height: 18)
+                                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                        }
+                                    } else if model.summary.phase == .paused {
                                         Image(systemName: "pause.fill")
                                             .font(.system(size: 14))
                                             .foregroundColor(.orange)

@@ -58,7 +58,7 @@ final class ZsignHandler {
 			p12Path: credentials.1,
 			p12Password: credentials.2,
 			entitlementsPath: _options.appEntitlementsFile?.path ?? "",
-			removeProvision: !_options.removeProvisioning,
+			removeProvision: _options.removeProvisioning,
 			completion: { _ in } // The native bridge requires a callback; its return value covers early failures too.
 		) else {
 			throw SigningFileHandlerError.signFailed
@@ -73,7 +73,7 @@ final class ZsignHandler {
 			appPath: _appUrl.relativePath,
 			entitlementsPath: _options.appEntitlementsFile?.path ?? "",
 			adhoc: true,
-			removeProvision: !_options.removeProvisioning,
+			removeProvision: _options.removeProvisioning,
 			completion: { _ in } // The native bridge requires a callback; its return value covers early failures too.
 		) else {
 			throw SigningFileHandlerError.signFailed

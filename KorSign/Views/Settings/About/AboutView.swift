@@ -64,15 +64,19 @@ struct AboutView: View {
 
 			NBSection(.localized("Source & License")) {
 				Button(.localized("KorSign Source Code"), systemImage: "chevron.left.forwardslash.chevron.right") {
+					AppHaptics.action()
 					UIApplication.open(_sourceURL)
 				}
 				Button(.localized("License (GPL-3.0)"), systemImage: "doc.text") {
+					AppHaptics.action()
 					UIApplication.open(_licenseURL)
 				}
 				Button(.localized("Based on RyukSign"), systemImage: "arrow.triangle.branch") {
+					AppHaptics.action()
 					UIApplication.open(_ryukSignURL)
 				}
 				Button(.localized("Originally based on Feather"), systemImage: "arrow.triangle.branch") {
+					AppHaptics.action()
 					UIApplication.open(_featherURL)
 				}
 			} footer: {
@@ -91,6 +95,7 @@ extension AboutView {
 		github: String
 	) -> some View {
 		Button {
+			AppHaptics.action()
 			UIApplication.open("https://github.com/\(github)")
 		} label: {
 			HStack {

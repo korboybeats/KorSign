@@ -118,6 +118,7 @@ private extension StorageDetailView {
 	func _row(_ entry: StorageEntry) -> some View {
 		if _isEditing {
 			Button {
+				AppHaptics.action()
 				if _selection.contains(entry.id) { _selection.remove(entry.id) }
 				else { _selection.insert(entry.id) }
 			} label: {
@@ -129,7 +130,7 @@ private extension StorageDetailView {
 			}
 			.disabled(entry.isProtected)
 		} else if entry.isDirectory, category.allowsExploring {
-			NavigationLink(destination: StorageDetailView(directory: entry.url, category: category)) {
+			NavigationLink(destination: StorageDetailView(directory: entry.url, category: category).navigationHaptics()) {
 				StorageEntryLabel(entry: entry)
 			}
 			.swipeActions(edge: .trailing) { _deleteAction(entry) }
@@ -143,6 +144,7 @@ private extension StorageDetailView {
 	func _deleteAction(_ entry: StorageEntry) -> some View {
 		if !entry.isProtected {
 			Button(.localized("Delete"), systemImage: "trash", role: .destructive) {
+				AppHaptics.action()
 				_delete([entry])
 			}
 		}
@@ -153,18 +155,19 @@ private extension StorageDetailView {
 		if _isEditing {
 			ToolbarItem(placement: .topBarLeading) {
 				Button(_selection == _selectableIds ? .localized("Deselect All") : .localized("Select All")) {
+					AppHaptics.action()
 					_selection = (_selection == _selectableIds) ? [] : _selectableIds
 				}
 			}
 			ToolbarItem(placement: .topBarTrailing) {
-				Button(.localized("Done")) { _isEditing = false; _selection.removeAll() }
+				Button(.localized("Done")) { AppHaptics.action(); _isEditing = false; _selection.removeAll() }
 					.fontWeight(.semibold)
 			}
 		} else {
 			ToolbarItem(placement: .topBarTrailing) {
 				Menu {
 					if !_selectableIds.isEmpty {
-						Button(.localized("Select")) { _isEditing = true }
+						Button(.localized("Select")) { AppHaptics.action(); _isEditing = true }
 					}
 					Picker(.localized("Sort By"), selection: $_sortRaw) {
 						ForEach(ItemSortOption.allCases) { option in
@@ -182,6 +185,7 @@ private extension StorageDetailView {
 	var _deleteBar: some View {
 		if _isEditing, !_selection.isEmpty {
 			Button(role: .destructive) {
+				AppHaptics.action()
 				let picked = _all.filter { _selection.contains($0.id) }
 				DestructiveConfirm.present(
 					title: .localized("Delete %lld", arguments: picked.count),

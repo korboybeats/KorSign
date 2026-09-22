@@ -28,6 +28,7 @@ extension View {
 				ToolbarItemGroup(placement: .keyboard) {
 					Spacer()
 					Button {
+						AppHaptics.action()
 						UIApplication.shared.endEditing()
 					} label: {
 						Text(String.localized("Done")).fontWeight(.semibold)

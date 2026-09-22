@@ -7,10 +7,12 @@
 
 import Foundation
 import Combine
+import UIKit
 
 extension Download {
 	var progressEvents: AnyPublisher<Void, Never> {
 		Publishers.MergeMany([
+			$appIcon.map { _ in }.eraseToAnyPublisher(),
 			$progress.map { _ in }.eraseToAnyPublisher(),
 			$unpackageProgress.map { _ in }.eraseToAnyPublisher(),
 			$bytesDownloaded.map { _ in }.eraseToAnyPublisher(),
@@ -59,6 +61,7 @@ final class DownloadProgressModel: ObservableObject {
 
 @MainActor
 final class DownloadsSummaryModel: ObservableObject {
+	@Published private(set) var appIcon: UIImage?
 	@Published private(set) var summary = DownloadProgressSummary([])
 	@Published private(set) var bytesDownloaded: Int64 = 0
 	@Published private(set) var bytesExpected: Int64 = 0
@@ -78,6 +81,8 @@ final class DownloadsSummaryModel: ObservableObject {
 	}
 
 	private func refresh() {
+		let icon = downloads.first(where: { $0.isImporting || $0.isSigning })?.appIcon
+		if appIcon !== icon { appIcon = icon }
 		let latest = DownloadProgressSummary(downloads)
 		if summary != latest { summary = latest }
 

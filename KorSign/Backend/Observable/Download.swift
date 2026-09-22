@@ -10,7 +10,41 @@ import UserNotifications
 import BackgroundTasks
 import ActivityKit
 
+final class ImportControl: @unchecked Sendable {
+    private let condition = NSCondition()
+    private var paused = false
+    private var cancelled = false
+    private var committed = false
+    var isCancelled: Bool {
+        condition.lock(); defer { condition.unlock() }
+        return cancelled
+    }
+    @discardableResult func setPaused(_ value: Bool) -> Bool {
+        condition.lock(); defer { condition.unlock() }
+        guard !committed, !cancelled else { return false }
+        paused = value; condition.broadcast(); return true
+    }
+    func cancel() {
+        condition.lock(); defer { condition.unlock() }
+        guard !committed else { return }
+        cancelled = true; paused = false; condition.broadcast()
+    }
+    func checkpoint() throws {
+        condition.lock(); defer { condition.unlock() }
+        while paused && !cancelled { condition.wait() }
+        if cancelled { throw CancellationError() }
+    }
+    func beginCommit() throws {
+        condition.lock(); defer { condition.unlock() }
+        while paused && !cancelled { condition.wait() }
+        if cancelled { throw CancellationError() }
+        committed = true
+    }
+}
+
 class Download: Identifiable, @unchecked Sendable {
+	let importControl = ImportControl()
+	@Published var appIcon: UIImage?
 	@Published var progress: Double = 0.0
 	@Published var bytesDownloaded: Int64 = 0
 	@Published var totalBytes: Int64 = 0
@@ -22,7 +56,7 @@ class Download: Identifiable, @unchecked Sendable {
 
 	var phase: DownloadPhase {
 		if isSigning { return .signing }
-		if isImporting { return .importing }
+		if isImporting { return isPaused ? .paused : .importing }
 		if unpackageProgress >= 1.0 { return .completed }
 		if onlyArchiving || progress >= 1.0 { return .importing }
 		if isPaused { return .paused }
@@ -32,12 +66,13 @@ class Download: Identifiable, @unchecked Sendable {
 	var phaseProgress: Double {
 		switch phase {
 		case .queued: return 0
-		case .downloading, .paused: return progress
+		case .downloading, .paused: return isImporting ? unpackageProgress : progress
 		case .importing: return unpackageProgress
 		case .signing, .completed: return 1
 		}
 	}
 
+	var usesBackgroundSession = false
 	var task: URLSessionDownloadTask?
 	var isPausing = false
 	var resumeAfterPause = false
@@ -86,7 +121,7 @@ class Download: Identifiable, @unchecked Sendable {
 
 	func beginImport() {
 		isImporting = true
-		unpackageProgress = 0.05
+		unpackageProgress = 0.0
 	}
 
 	func endImport() {

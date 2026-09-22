@@ -78,17 +78,24 @@ Installing requirements may contact package services. The optional CLI check
 creates disposable signing artifacts.
 
 The Python check replaces release downloads/signing with disposable fixtures.
-It covers request rejection, main/Dev identity, cleanup on timeout, concurrency,
-rate limits, expiry, and binary HTTP HEAD/GET/ranges. The Worker check validates
+It covers request rejection, main/Dev identity, revision/build mismatch rejection,
+cleanup on timeout, concurrency, rate limits, expiry, and binary HTTP HEAD/GET/ranges. The Worker check validates
 public route/upload limits and private forwarding. A separate deployment smoke
 check must exercise real Zsign using a disposable certificate, then verify the
 public manifest and binary responses. Do not use a real user's private key for
 routine server tests.
 
-Publish the validated main IPA under the matching `v<version>` GitHub release.
+Publish the validated main IPA under the matching `v<version>-r<build>` GitHub release.
 Keep Dev builds private unless their publication is explicitly requested.
 Without its matching release asset, Dev cannot install an update. The main IPA
 cannot replace Dev because their bundle identifiers differ.
 `update-repo.sh` refreshes the source feed with exact asset matching. Review that
 change with the release. Automatic feed updates require the repository workflow
 to be enabled.
+
+Revision releases use `v<version>-r<build>`. The service checks both the IPA's
+three-part version and numeric build against this tag, before and after signing.
+Legacy `v<version>` releases remain supported. Draft releases are not downloadable
+through the signing service. Verify revision support before publishing; after
+publication, verify the public asset identity and test signing and installation
+separately. A successful asset download is not proof of signing or installation.

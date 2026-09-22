@@ -6,6 +6,7 @@
 //  Copyright (c) 2024 Samara M (khcrysalis)
 //
 import SwiftUI
+import NimbleExtensions
 import NukeUI
 
 @available(iOS 18, *)
@@ -19,6 +20,7 @@ struct ExtendedTabbarView: View {
     @ObservedObject private var _tweakManager = TweakManager.shared
     @ObservedObject private var _tabPrefs = TabBarPreferences.shared
     @AppStorage("Feather.showSourcesUpdateBadge") private var _showSourcesUpdateBadge: Bool = true
+
 
     private var _visibleDefaultTabs: [TabEnum] {
         _tabPrefs.visibleTabs
@@ -95,6 +97,7 @@ struct ExtendedTabbarView: View {
                     }
                     .swipeActions {
                         Button(.localized("Delete"), systemImage: "trash", role: .destructive) {
+                            AppHaptics.action()
                             Storage.shared.deleteSource(for: source)
                         }
                     }
@@ -102,12 +105,14 @@ struct ExtendedTabbarView: View {
             }
             .sectionActions {
                 Button(.localized("Add Source"), systemImage: "plus") {
+                    AppHaptics.action()
                     _isAddingPresenting = true
                 }
             }
             .defaultVisibility(.hidden, for: .tabBar)
             .hidden(horizontalSizeClass == .compact)
         }
+        .background(TabTouchHaptics().frame(width: 0, height: 0))
         .tabViewStyle(.sidebarAdaptable)
         .tabViewCustomization($customization)
         .sheet(isPresented: $_isAddingPresenting) {

@@ -101,7 +101,13 @@ final class StorageManager {
 
         // Startup can retire old temp work, but pending downloads do not expire by age.
         try fm.setAttributes([.modificationDate: Date(timeIntervalSince1970: 0)], ofItemAtPath: fm.downloadStaging.path)
+        let systemDownload = try write("tmp/CFNetworkDownload_probe.tmp")
+        let systemSession = try write("tmp/com.apple.nsurlsessiond/Downloads/pending")
+        let unknownTemporary = try write("tmp/unknown/keep")
         StorageManager.purgeStaleTemporary()
+        for url in [systemDownload, systemSession, unknownTemporary] {
+            assert(try! Data(contentsOf: url) == Data("keep".utf8))
+        }
         assert(!fm.fileExists(atPath: active.path))
         assert(try! Data(contentsOf: staged) == Data("keep".utf8))
         assert(try! Data(contentsOf: upload) == Data("keep".utf8))

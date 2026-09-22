@@ -122,6 +122,7 @@ struct InstallQueuePill: View {
 	@ViewBuilder
 	private func _pill(for current: AnyApp) -> some View {
 		Button {
+			AppHaptics.action()
 			InstallQueueWindow.shared.ensure()
 			queue.isSheetPresented = true
 		} label: {

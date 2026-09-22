@@ -38,15 +38,18 @@ struct SigningCustomizationView: View {
 		NBSection(.localized("Customization")) {
 			Menu {
 				Button(.localized("Select Alternative Icon"), systemImage: "app.dashed") {
+					AppHaptics.action()
 					Presentation.afterDismiss { _isAltPickerPresenting = true }
 				}
 				Button(.localized("Choose from Files"), systemImage: "folder") {
+					AppHaptics.action()
 					DocumentPicker.open([.image], folder: .icons) { urls in
 						guard let url = urls.first else { return }
 						appIcon = UIImage.fromFile(url)?.resizeToSquare()
 					}
 				}
 				Button(.localized("Choose from Photos"), systemImage: "photo") {
+					AppHaptics.action()
 					Presentation.afterDismiss { _isImagePickerPresenting = true }
 				}
 			} label: {
@@ -99,6 +102,7 @@ struct SigningCustomizationView: View {
 				)
 			}
 			NavigationLink {
+                Group {
 				SigningDescriptionView(
 					title: .localized("Description"),
 					initialValue: _displayedDescription ?? "",
@@ -107,7 +111,9 @@ struct SigningCustomizationView: View {
 						_displayedDescription = newValue
 					}
 				)
-			} label: {
+
+                }.navigationHaptics()
+            } label: {
 				LabeledContent(.localized("Description")) {
 					Text(_displayedDescription ?? .localized("None"))
 						.lineLimit(1)
@@ -120,8 +126,11 @@ struct SigningCustomizationView: View {
 	@ViewBuilder
 	private func _infoCell<V: View>(_ title: String, desc: String?, @ViewBuilder destination: () -> V) -> some View {
 		NavigationLink {
+                Group {
 			destination()
-		} label: {
+
+                }.navigationHaptics()
+            } label: {
 			LabeledContent(title) {
 				Text(desc ?? .localized("Unknown"))
 			}

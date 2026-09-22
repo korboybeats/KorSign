@@ -134,9 +134,10 @@ struct SourcesView: View {
 			isPresented: $_showDeleteConfirmation
 		) {
 			Button("Delete", role: .destructive) {
+				AppHaptics.action()
 				deleteSelectedSources()
 			}
-			Button("Cancel", role: .cancel) {}
+			Button("Cancel", role: .cancel) { AppHaptics.action();}
 		} message: {
 			Text("This action cannot be undone.")
 		}
@@ -151,6 +152,7 @@ struct SourcesView: View {
 	private var allRepositoriesSection: some View {
 		Section {
 			NavigationLink(isActive: $_shouldNavigateToAllRepos) {
+                Group {
 				SourceAppsView(
 					object: _nonExcludedSources,
 					viewModel: viewModel,
@@ -158,7 +160,9 @@ struct SourcesView: View {
 						await self.viewModel.fetchSources(self._sources, refresh: true)
 					}
 				)
-			} label: {
+
+                }.navigationHaptics()
+            } label: {
 				allRepositoriesLabel
 			}
 			.buttonStyle(.plain)
@@ -222,6 +226,7 @@ struct SourcesView: View {
 	@ViewBuilder
 	private func selectionButton(for source: AltSource) -> some View {
 		Button {
+			AppHaptics.action()
 			toggleSelection(for: source)
 		} label: {
 			let isSelected = _selectedSources.contains(source)
@@ -247,6 +252,7 @@ struct SourcesView: View {
 		)
 
 		NavigationLink(isActive: isActive) {
+                Group {
 			SourceAppsView(
 				object: [source],
 				viewModel: viewModel,
@@ -254,7 +260,9 @@ struct SourcesView: View {
 					await self.viewModel.fetchSources(self._sources, refresh: true)
 				}
 			)
-		} label: {
+
+                }.navigationHaptics()
+            } label: {
 			SourcesCellView(source: source, isEditMode: false)
 		}
 		.buttonStyle(.plain)
@@ -269,6 +277,7 @@ struct SourcesView: View {
 				description: .localized("Get started by adding your first repository.")
 			) {
 				Button {
+					AppHaptics.action()
 					_isAddingPresenting = true
 				} label: {
 					PrimaryTabEmptyStateButton(.localized("Add Source"))
@@ -283,18 +292,20 @@ struct SourcesView: View {
 			if _isEditMode {
 				HStack(spacing: 12) {
 					Button("Done") {
+						AppHaptics.action()
 						withAnimation {
 							_isEditMode = false
 							_selectedSources.removeAll()
 						}
 					}
-					Button(action: selectAllSources) {
+					Button(action: { AppHaptics.action(); selectAllSources() }) {
 						Text("Select All")
 					}
 				}
 			} else {
 				if !_filteredSources.isEmpty {
 					Button("Edit") {
+						AppHaptics.action()
 						withAnimation {
 							_isEditMode = true
 						}
@@ -306,6 +317,7 @@ struct SourcesView: View {
 		ToolbarItem(placement: .topBarTrailing) {
 			if _isEditMode {
 				Button(role: .destructive) {
+					AppHaptics.action()
 					if !_selectedSources.isEmpty {
 						_showDeleteConfirmation = true
 					}
@@ -315,6 +327,7 @@ struct SourcesView: View {
 				.disabled(_selectedSources.isEmpty)
 			} else {
 				Button {
+					AppHaptics.action()
 					_isAddingPresenting = true
 				} label: {
 					Image(systemName: "plus")

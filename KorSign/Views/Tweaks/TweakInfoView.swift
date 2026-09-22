@@ -130,6 +130,7 @@ struct TweakInfoView: View {
 				&& currentConfig?.customFolder == folder)
 			NBSection(.localized("Recommended")) {
 				Button {
+					AppHaptics.action()
 					onApply(path, folder)
 					_applied = true
 					Toast.success(.localized("Applied recommended settings"), systemImage: "wand.and.stars")

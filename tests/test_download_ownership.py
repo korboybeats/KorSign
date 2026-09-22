@@ -16,7 +16,7 @@ def method(name):
         depth += (source[end] == '{') - (source[end] == '}')
         end += 1
     return source[start:end].replace('private func', 'func')
-methods = '\n'.join(method(name) for name in ['startDownload', 'resumeDownload', 'pauseDownload', 'cancelDownload', 'getDownloadTask', 'finishImport'])
+methods = '\n'.join(method(name) for name in ['startDownload', 'resumeDownload', 'pauseDownload', 'cancelDownload', 'describeBackgroundTask', 'getDownloadTask', 'finishImport'])
 delegates = (base / 'DownloadManager+Delegates.swift').read_text()
 finish = delegates[delegates.index('\tfunc urlSession('):delegates.index('\n\tfunc urlSession(', delegates.index('\tfunc urlSession(') + 1)]
 start = delegates.index('\tfunc urlSession(_ session: URLSession, task:')
@@ -25,14 +25,19 @@ download = (base / 'Download.swift').read_text().split('struct DownloadProgressS
 download = '\n'.join(line for line in download.splitlines() if not line.startswith('import '))
 program = r'''
 import Foundation
+final class UIImage {}
+enum FileLogger { static func log(_ text: String, category: String) {} }
 @propertyWrapper struct Published<Value> { var wrappedValue: Value }
 enum DownloadPhase { case queued, downloading, paused, importing, signing, completed }
 // Swift's asynchronous main executor on macOS need not use the OS main thread.
 enum Thread { static let isMainThread = true }
 var stagingRoot = URL(fileURLWithPath: "/unused")
 extension FileManager { var downloadStaging: URL { stagingRoot } }
-class URLSessionTask: NSObject {}
+class URLSessionTask: NSObject { var taskIdentifier = UUID().hashValue }
 final class URLSessionDownloadTask: URLSessionTask {
+    var taskDescription: String?
+    var countOfBytesReceived: Int64 = 0
+    var countOfBytesExpectedToReceive: Int64 = -1
     var response: URLResponse? = nil
     enum State { case suspended, running, canceling, completed }
     var state = State.suspended
@@ -104,6 +109,39 @@ final class DownloadManager {
     static func drain() async { await withCheckedContinuation { c in DispatchQueue.main.async { c.resume() } } }
     @MainActor static func main() async throws {
         stagingRoot = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
+        // Background jobs can be adopted by a fresh manager after process relaunch.
+        let backgroundManager = DownloadManager()
+        let backgroundURL = URL(string: "https://example.invalid/background.ipa")!
+        let armed = backgroundManager.startDownload(from: backgroundURL, id: "armed", appName: "Probe.ipa", inBackground: true)
+        let backgroundTask = armed.task!
+        assert(backgroundManager._backgroundSession.tasks.count == 1)
+        assert(backgroundManager._foregroundSession.tasks.isEmpty)
+        backgroundTask.countOfBytesReceived = 12
+        backgroundTask.countOfBytesExpectedToReceive = 24
+        let relaunched = DownloadManager()
+        let recovered = relaunched.getDownloadTask(by: backgroundTask)!
+        assert(recovered.id == "armed" && recovered.fileName == "Probe.ipa")
+        assert(recovered.usesBackgroundSession && recovered.progress == 0.5)
+        assert(relaunched.getDownloadTask(by: backgroundTask) === recovered)
+        assert(relaunched.downloads.count == 1)
+        let reboundTask = URLSessionDownloadTask()
+        reboundTask.taskIdentifier = backgroundTask.taskIdentifier
+        reboundTask.taskDescription = backgroundTask.taskDescription
+        reboundTask.state = .running
+        assert(relaunched.getDownloadTask(by: reboundTask) === recovered)
+        assert(relaunched.getDownloadTask(by: backgroundTask) === recovered)
+        relaunched.pauseDownload(recovered)
+        assert(backgroundTask.taskDescription == nil)
+        backgroundTask.finishPause(Data([1]))
+        await drain()
+        relaunched.resumeDownload(recovered)
+        assert(relaunched._backgroundSession.tasks.count == 1)
+        assert(relaunched._foregroundSession.tasks.isEmpty)
+        assert(relaunched.getDownloadTask(by: backgroundTask) == nil)
+        let resumedBackgroundTask = recovered.task!
+        relaunched.cancelDownload(recovered)
+        assert(resumedBackgroundTask.taskDescription == nil)
+        assert(relaunched.getDownloadTask(by: resumedBackgroundTask) == nil)
         let manager = DownloadManager()
         let session = manager._foregroundSession!
         session.onResume = { task in assert(manager.getDownloadTask(by: task) != nil) }

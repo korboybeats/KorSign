@@ -32,6 +32,7 @@ struct ImportFoldersView: View {
 			if !_names.isEmpty {
 				Section {
 					Button(role: .destructive) {
+						AppHaptics.action()
 						ImportFolder.allCases.forEach { $0.clear() }
 						_reload()
 					} label: {
@@ -69,7 +70,7 @@ private struct ImportFolderCellView: View {
 
 	// MARK: Body
 	var body: some View {
-		Button(action: onSelect) {
+		Button(action: { AppHaptics.action(); onSelect() }) {
 			HStack {
 				Label(folder.title, systemImage: folder.icon)
 				Spacer()
@@ -81,7 +82,7 @@ private struct ImportFolderCellView: View {
 		}
 		.swipeActions(edge: .trailing) {
 			if name != nil {
-				Button(role: .destructive, action: onClear) {
+				Button(role: .destructive, action: { AppHaptics.action(); onClear() }) {
 					Label(.localized("Clear"), systemImage: "xmark.circle")
 				}
 			}

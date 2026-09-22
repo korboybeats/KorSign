@@ -79,18 +79,20 @@ struct TweakExtractionView: View {
 			}
 			.toolbar {
 				ToolbarItem(placement: .topBarLeading) {
-					Button(.localized("Cancel")) { _finish() }
+					Button(.localized("Cancel")) { AppHaptics.action(); _finish() }
 				}
 				if !candidates.isEmpty {
 					ToolbarItem(placement: .topBarTrailing) {
 						if _selection.count > 1 {
 							Menu {
 								Button {
+									AppHaptics.action()
 									_confirmOrImport(combine: false)
 								} label: {
 									Label(.localized("Import as Separate Tweaks"), systemImage: "square.on.square")
 								}
 								Button {
+									AppHaptics.action()
 									_confirmOrImport(combine: true)
 								} label: {
 									Label(.localized("Combine Into One Tweak"), systemImage: "square.stack.3d.down.right")
@@ -99,7 +101,7 @@ struct TweakExtractionView: View {
 								Text(.localized("Import")).fontWeight(.semibold)
 							}
 						} else {
-							Button(.localized("Import")) { _confirmOrImport(combine: false) }
+							Button(.localized("Import")) { AppHaptics.action(); _confirmOrImport(combine: false) }
 								.fontWeight(.semibold)
 								.disabled(_selection.isEmpty)
 						}
@@ -108,11 +110,13 @@ struct TweakExtractionView: View {
 						ToolbarItem(placement: .topBarTrailing) {
 							Menu {
 								Button {
+									AppHaptics.action()
 									withAnimation(.smooth) { _expanded = Set(_groups.map { $0.folder }) }
 								} label: {
 									Label(.localized("Expand All"), systemImage: "chevron.down")
 								}
 								Button {
+									AppHaptics.action()
 									withAnimation(.smooth) { _expanded = [] }
 								} label: {
 									Label(.localized("Collapse All"), systemImage: "chevron.right")
@@ -125,6 +129,7 @@ struct TweakExtractionView: View {
 					ToolbarItem(placement: .bottomBar) {
 						HStack {
 							Button(_selection.count == candidates.count ? .localized("Deselect All") : .localized("Select All")) {
+								AppHaptics.action()
 								withAnimation(.smooth) {
 									if _selection.count == candidates.count { _selection.removeAll() }
 									else { _selection = Set(candidates.map { $0.id }) }
@@ -151,8 +156,8 @@ struct TweakExtractionView: View {
 			}
 		}
 		.alert(.localized("Add Tweaks?"), isPresented: $_showImportConfirm) {
-			Button(.localized("Cancel"), role: .cancel) {}
-			Button(String.localized("Add %lld", arguments: _selection.count)) { _import(combine: _pendingCombine) }
+			Button(.localized("Cancel"), role: .cancel) { AppHaptics.action();}
+			Button(String.localized("Add %lld", arguments: _selection.count)) { AppHaptics.action(); _import(combine: _pendingCombine) }
 		} message: {
 			Text(verbatim: .localized("You're about to add %lld items to your Tweak Manager. Many of these are usually part of the app, not tweaks.", arguments: _selection.count))
 		}
@@ -216,6 +221,7 @@ struct TweakExtractionView: View {
 		let allSelected = selectedInFolder == group.items.count
 		HStack(spacing: 10) {
 			Button {
+				AppHaptics.action()
 				withAnimation(.smooth) {
 					if allSelected { group.items.forEach { _selection.remove($0.id) } }
 					else { group.items.forEach { _selection.insert($0.id) } }
@@ -257,6 +263,7 @@ struct TweakExtractionView: View {
 	private func _row(_ candidate: TweakCandidate, showFolder: Bool) -> some View {
 		let isOn = _selection.contains(candidate.id)
 		Button {
+			AppHaptics.action()
 			if isOn { _selection.remove(candidate.id) } else { _selection.insert(candidate.id) }
 		} label: {
 			HStack(spacing: 12) {
@@ -383,7 +390,7 @@ struct TweakIPAExtractView: View {
 				systemImage: "exclamationmark.triangle",
 				description: message
 			) {
-				Button(.localized("Close")) { dismiss() }
+				Button(.localized("Close")) { AppHaptics.action(); dismiss() }
 			}
 		}
 	}

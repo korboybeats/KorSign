@@ -67,7 +67,7 @@ def fetch_release(version, bundle, destination):
     if count != asset['size']:
         raise ValueError('incomplete_download')
     info = ipa_info(destination)
-    if info.get('CFBundleIdentifier') != bundle or info.get('CFBundleShortVersionString') != version:
+    if info.get('CFBundleIdentifier') != bundle or (info.get('CFBundleShortVersionString') != version.split('-r')[0] or ('-r' in version and str(info.get('CFBundleVersion')) != version.split('-r')[1])):
         raise ValueError('release_identity_mismatch')
 
 
@@ -93,7 +93,7 @@ def sign():
     if any(len(request.form.getlist(k)) != 1 for k in request.form) or any(len(request.files.getlist(k)) != 1 for k in request.files):
         return jsonify(error='bad_request'), 400
     version, bundle, password = (request.form[k] for k in ('version', 'bundleId', 'p12password'))
-    if not re.fullmatch(r'\d{1,5}(?:\.\d{1,5}){1,3}', version):
+    if not re.fullmatch(r'\d{1,5}(?:\.\d{1,5}){2}(?:-r[1-9]\d{0,4})?', version):
         return jsonify(error='bad_version'), 400
     if bundle not in BUNDLES:
         return jsonify(error='bundle_not_allowed'), 400
@@ -129,7 +129,7 @@ def sign():
             if result.returncode or not (work/'signed.ipa').is_file():
                 return jsonify(error='sign_failed'), 422
             info = ipa_info(work/'signed.ipa')
-            if info.get('CFBundleIdentifier') != bundle or info.get('CFBundleShortVersionString') != version:
+            if info.get('CFBundleIdentifier') != bundle or (info.get('CFBundleShortVersionString') != version.split('-r')[0] or ('-r' in version and str(info.get('CFBundleVersion')) != version.split('-r')[1])):
                 raise ValueError('signed_identity_mismatch')
             token = secrets.token_hex(24)
             output = ROOT / token

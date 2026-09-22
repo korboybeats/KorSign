@@ -21,6 +21,7 @@ struct DownloadItemCardView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     if !download.isManual {
                         Button(action: {
+                            AppHaptics.action()
                             DownloadNavigationHelper.handleAppNameTap(for: download)
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 isOverlayPresented = false
@@ -54,6 +55,7 @@ struct DownloadItemCardView: View {
                 HStack(spacing: 8) {
                     if shouldShowPauseButton {
                         Button {
+                            AppHaptics.action()
                             if model.isPaused {
                                 download.resume()
                             } else {
@@ -72,6 +74,7 @@ struct DownloadItemCardView: View {
 
                     if download.canCancel {
                         Button {
+                            AppHaptics.action()
                             DownloadManager.shared.cancelDownload(download)
                         } label: {
                             Image(systemName: "xmark")
@@ -125,6 +128,7 @@ struct DownloadItemCardView: View {
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             if download.canCancel {
                 Button(role: .destructive) {
+                    AppHaptics.action()
                     DownloadManager.shared.cancelDownload(download)
                 } label: {
                     Label(.localized("Cancel"), systemImage: "xmark")

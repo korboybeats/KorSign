@@ -94,3 +94,7 @@ manifest-worker
 
 # Interrupted build-time TLS refresh staging (may contain key material)
 .korsign-deps-*/
+
+# Python test and tooling caches
+__pycache__/
+*.py[cod]

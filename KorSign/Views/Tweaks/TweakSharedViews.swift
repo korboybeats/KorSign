@@ -68,6 +68,7 @@ struct TweakTargetingPicker: View {
 	private func _extensionToggle(_ name: String) -> some View {
 		let isOn = selectedNames.contains(name)
 		Button {
+			AppHaptics.action()
 			var set = selectedNames
 			if isOn { set.removeAll { $0 == name } } else { set.append(name) }
 			targeting = .selected(set)
@@ -142,31 +143,34 @@ struct TweakLibraryRow: View {
 
 	var body: some View {
 		NavigationLink {
+                Group {
 			TweakDetailView(tweakId: tweak.id)
-		} label: {
+
+                }.navigationHaptics()
+            } label: {
 			TweakRowLabel(tweak: tweak)
 		}
 		.swipeActions(edge: .trailing, allowsFullSwipe: true) {
-			Button(role: .destructive, action: onDelete) {
+			Button(role: .destructive, action: { AppHaptics.action(); onDelete() }) {
 				Label(.localized("Delete"), systemImage: "trash")
 			}
-			Button(action: onShare) {
+			Button(action: { AppHaptics.action(); onShare() }) {
 				Label(.localized("Share"), systemImage: "square.and.arrow.up")
 			}
 			.tint(.blue)
 		}
 		.contextMenu {
-			Button(action: onShare) {
+			Button(action: { AppHaptics.action(); onShare() }) {
 				Label(.localized("Share"), systemImage: "square.and.arrow.up")
 			}
-			Button(action: onExport) {
+			Button(action: { AppHaptics.action(); onExport() }) {
 				Label(.localized("Save to Files"), systemImage: "folder")
 			}
-			Button(action: onMove) {
+			Button(action: { AppHaptics.action(); onMove() }) {
 				Label(.localized("Move to Folder"), systemImage: "folder")
 			}
 			Divider()
-			Button(role: .destructive, action: onDelete) {
+			Button(role: .destructive, action: { AppHaptics.action(); onDelete() }) {
 				Label(.localized("Delete"), systemImage: "trash")
 			}
 		}
@@ -197,6 +201,7 @@ struct TweakFolderPickerView: View {
 				}
 				Section {
 					Button {
+						AppHaptics.action()
 						_newFolderName = ""
 						_showNewFolder = true
 					} label: {
@@ -207,8 +212,9 @@ struct TweakFolderPickerView: View {
 			.toolbar { NBToolbarButton(role: .close) }
 			.alert(.localized("New Folder"), isPresented: $_showNewFolder) {
 				TextField(.localized("Folder Name"), text: $_newFolderName)
-				Button(.localized("Cancel"), role: .cancel) {}
+				Button(.localized("Cancel"), role: .cancel) { AppHaptics.action();}
 				Button(.localized("Create")) {
+					AppHaptics.action()
 					guard let folder = manager.addFolder(name: _newFolderName) else { return }
 					if onPick(folder.id) { dismiss() }
 				}
@@ -219,6 +225,7 @@ struct TweakFolderPickerView: View {
 	@ViewBuilder
 	private func _pickRow(title: String, systemImage: String, folderId: UUID?) -> some View {
 		Button {
+			AppHaptics.action()
 			if onPick(folderId) { dismiss() }
 		} label: {
 			HStack(spacing: 12) {
