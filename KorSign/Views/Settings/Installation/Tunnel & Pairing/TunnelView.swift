@@ -34,6 +34,7 @@ struct TunnelView: View {
 			
 			Section {
 				Button(.localized("Import Pairing File"), systemImage: "square.and.arrow.down") {
+					AppHaptics.action()
 					DocumentPicker.open([.xmlPropertyList, .plist, .mobiledevicepairing], folder: .pairing) { urls in
 						guard let url = urls.first else { return }
 						FR.movePairing(url)
@@ -43,6 +44,7 @@ struct TunnelView: View {
 				if #available(iOS 17.4, *) {
 				} else {
 					Button(.localized("Restart Heartbeat"), systemImage: "arrow.counterclockwise") {
+						AppHaptics.action()
 						HeartbeatManager.shared.start(true)
 
 						DispatchQueue.global(qos: .userInitiated).async {
@@ -61,14 +63,17 @@ struct TunnelView: View {
 			
 			NBSection(.localized("Help")) {
 				Button(.localized("Pairing File Guide"), systemImage: "questionmark.circle") {
+					AppHaptics.action()
 					UIApplication.open("https://github.com/claration/Impactor#pairing-file")
 				}
 				if isLocalDevVpnAvailable {
 					Button(.localized("Connect to LocalDevVPN"), systemImage: "link") {
+						AppHaptics.action()
 						UIApplication.open("localdevvpn://enable?scheme=feather")
 					}
 				} else {
 					Button(.localized("Download LocalDevVPN"), systemImage: "arrow.down.app") {
+						AppHaptics.action()
 						UIApplication.open("https://apps.apple.com/us/app/localdevvpn/id6755608044")
 					}
 				}

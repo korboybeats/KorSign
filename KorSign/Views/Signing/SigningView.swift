@@ -89,6 +89,7 @@ struct SigningView: View {
 						.rotationEffect(.degrees(180))
 						.overlay {
 							Button {
+								AppHaptics.action()
 								if _isSigning {
 									_isLogPresenting = true
 								} else {
@@ -155,14 +156,20 @@ extension SigningView {
 		NBSection(.localized("Signing")) {
 			if let cert = _selectedCert() {
 				NavigationLink {
+                Group {
 					CertificatesView(selectedCert: $_temporaryCertificate)
-				} label: {
+
+                }.navigationHaptics()
+            } label: {
 					CertificatesCellView(
 						cert: cert
 					)
 				}
 			} else {
-				NavigationLink(.localized("Select Certificate")) { CertificatesView(selectedCert: $_temporaryCertificate) }
+				NavigationLink(.localized("Select Certificate")) {
+                Group { CertificatesView(selectedCert: $_temporaryCertificate)
+                }.navigationHaptics()
+            }
 					.font(.footnote)
 			}
 		}
@@ -184,7 +191,7 @@ extension SigningView {
 			return
 		}
 
-		NBHaptic.tap()
+		AppHaptics.action()
 		_isSigning = true
 		if _autoShowLogs { _isLogPresenting = true }
 

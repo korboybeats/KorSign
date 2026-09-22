@@ -36,6 +36,7 @@ struct MergedDownloadsView: View {
 
                 ZStack(alignment: .topTrailing) {
                     Button {
+                        AppHaptics.action()
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                             showCustomMenu.toggle()
                         }
@@ -50,6 +51,7 @@ struct MergedDownloadsView: View {
                     if showCustomMenu {
                         VStack(alignment: .leading, spacing: 0) {
                             Button {
+                                AppHaptics.action()
                                 stopAllDownloads()
                             } label: {
                                 HStack {
@@ -68,6 +70,7 @@ struct MergedDownloadsView: View {
                             Divider()
 
                             Button {
+                                AppHaptics.action()
                                 toggleDetails()
                             } label: {
                                 HStack {

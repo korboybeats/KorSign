@@ -15,6 +15,8 @@ and loopback-server requirements are appropriate. It may fetch packages.
 
 - `test_self_update.py` runs the production release parser with main and Dev
   bundle identities, including reversed asset order and missing matching assets.
+  It checks revision ordering, legacy build identifiers, invalid revision tags,
+  and source-feed version/build fields.
 - `test_ota_install.sh` compiles the production state tracker and progress probe.
   It checks deadlines, late callbacks, stale or missing progress, same-version
   replacements, and retained progress receiving a final install state after
@@ -80,8 +82,8 @@ uses temporary files only; it does not sign an IPA or prove device installation.
 ## Archive extraction boundaries
 
 Run `python3 tests/test_archive_extraction.py` on macOS. It compiles the production
-extractor and TAR/DEB integration against the already cached, pinned ZIPFoundation,
-SWCompression, and BitByteData sources. Pass `--checkouts /path/to/checkouts` if
+extractor and TAR/DEB integration against vendored ZIPFoundation and cached, pinned
+SWCompression and BitByteData sources. Pass `--checkouts /path/to/checkouts` if
 needed. Missing or modified dependencies fail the check; nothing is downloaded.
 
 Disposable fixtures cover valid ZIP/IPA/TIPA, backup/tweak layouts, relative links,
@@ -342,9 +344,9 @@ exchange; download and exchange failures are injected. Existing files must survi
 all failures. No production endpoint or real deps directory is used. This does not
 verify public trust, expiry, hostname coverage or iPhone behavior.
 
-Run `python3 tests/test_create_release.py` for new-version-only publication policy.
+Run `python3 tests/test_create_release.py` for new-tag-only publication policy.
 It executes the real shell script with fake git/gh commands: existing tags and
-lookup failures must prevent creation; new versions use Main and the exact commit;
+lookup failures must prevent creation; new versions/revisions use Main and the exact commit;
 creation errors propagate without an update fallback. No GitHub access occurs.
 
 Run `ruby tests/test_release_workflow.rb` to check publication defaults, validation
@@ -355,3 +357,26 @@ Run `python3 tests/test_import_extraction_lifecycle.py` to check the actual impo
 extraction method with slow-success and failure stubs. The old five-minute deadline
 is accelerated if reintroduced; it must not reject successful extraction. This
 checks orchestration, not ZIP internals or physical-iPhone performance.
+
+## Import performance and interaction settings
+
+- `python3 tests/test_haptics_and_reopen.py` checks the production haptic policy,
+  preference migration, app reopening transitions, and suppression during active
+  installation with platform stubs. Touch timing and feedback strength require a physical iPhone.
+- `python3 tests/test_import_cleanup.py` checks successful, failed, and repeated
+  import cleanup while preserving the original IPA and saved Library entries.
+- `python3 tests/test_archive_extraction.py --checkouts <cached-checkouts>` checks
+  both archive decoders, buffer sizes, ZIP64 metadata, checksums, path containment,
+  malformed streams, cancellation, and retained output chunks. See the
+  [vendored package notes](../ZIPFoundation/README.md) for maintenance guidance.
+- `python3 tests/test_import_controls.py` checks that paused extraction waits,
+  resuming releases it, cancellation wakes a paused worker, and the final-save
+  boundary rejects late pause/cancel requests. Panel hit testing and repeated
+  dismissal/reopening require a physical iPhone.
+
+For phone verification, pause/resume an import through completion, stop an active
+import, and stop another while paused. Confirm no partial Library entry remains
+and the original IPA is still available. Close/reopen the panel repeatedly while
+work is active or paused, and check the title, action row, and close button.
+Return from Home during installation: the automatic reopen picker must stay
+closed; an enabled post-install picker should appear only afterward.

@@ -164,14 +164,14 @@ struct TweakLibraryList: View {
 		switch _alert {
 		case .newFolder, .renameFolder:
 			TextField(.localized("Folder Name"), text: $_folderNameField)
-			Button(.localized("Cancel"), role: .cancel) {}
-			Button(.localized("Save")) { _commitFolderAlert() }
+			Button(.localized("Cancel"), role: .cancel) { AppHaptics.action();}
+			Button(.localized("Save")) { AppHaptics.action(); _commitFolderAlert() }
 		case .confirmImport(let urls):
-			Button(.localized("Cancel"), role: .cancel) {}
-			Button(String.localized("Import %lld", arguments: urls.count)) { _importFiles(urls) }
+			Button(.localized("Cancel"), role: .cancel) { AppHaptics.action();}
+			Button(String.localized("Import %lld", arguments: urls.count)) { AppHaptics.action(); _importFiles(urls) }
 		case .confirmDelete(let ids):
-			Button(.localized("Cancel"), role: .cancel) {}
-			Button(String.localized("Delete %lld", arguments: ids.count), role: .destructive) { _performDelete(ids) }
+			Button(.localized("Cancel"), role: .cancel) { AppHaptics.action();}
+			Button(String.localized("Delete %lld", arguments: ids.count), role: .destructive) { AppHaptics.action(); _performDelete(ids) }
 		case .none:
 			EmptyView()
 		}
@@ -334,6 +334,7 @@ extension TweakLibraryList {
 		if _isEditing {
 			ToolbarItem(placement: .topBarLeading) {
 				Button(_selection == _visibleSelectableIds ? .localized("Deselect All") : .localized("Select All")) {
+					AppHaptics.action()
 					if _selection == _visibleSelectableIds {
 						_selection.removeAll()
 					} else {
@@ -345,6 +346,7 @@ extension TweakLibraryList {
 			// `.bottomBar` item is hidden behind the native tab bar).
 			ToolbarItem(placement: .topBarTrailing) {
 				Button(.localized("Done")) {
+					AppHaptics.action()
 					_isEditing = false
 					_selection.removeAll()
 				}
@@ -354,28 +356,32 @@ extension TweakLibraryList {
 			// Stay mounted (disabled when empty) rather than added/removed — inserting a
 			// toolbar item mid-animation drops the tap landing on it that frame.
 			ToolbarItem(placement: .topBarLeading) {
-				Button(.localized("Select")) { _isEditing = true }
+				Button(.localized("Select")) { AppHaptics.action(); _isEditing = true }
 					.disabled(manager.tweaks.isEmpty)
 			}
 			ToolbarItem(placement: .topBarTrailing) {
 				Menu {
 					Button {
+						AppHaptics.action()
 						_sheet = .importFile
 					} label: {
 						Label(.localized("Import File"), systemImage: "doc.badge.plus")
 					}
 					Button {
+						AppHaptics.action()
 						_sheet = .extractIPAPicker
 					} label: {
 						Label(.localized("Extract from IPA"), systemImage: "shippingbox")
 					}
 					Button {
+						AppHaptics.action()
 						_sheet = .extractLibrary
 					} label: {
 						Label(.localized("Extract from Library App"), systemImage: "square.grid.2x2")
 					}
 					Divider()
 					Button {
+						AppHaptics.action()
 						_folderNameField = ""
 						_alert = .newFolder
 					} label: {
@@ -461,6 +467,7 @@ extension TweakLibraryList {
 			description: .localized("Import a .dylib or .deb, or send one over from Web Manager in Settings.")
 		) {
 			Button {
+				AppHaptics.action()
 				_sheet = .importFile
 			} label: {
 				PrimaryTabEmptyStateButton(.localized("Import Tweak"))
@@ -472,6 +479,7 @@ extension TweakLibraryList {
 	private func _row(for tweak: ManagedTweak) -> some View {
 		if _isEditing {
 			Button {
+				AppHaptics.action()
 				if _selection.contains(tweak.id) { _selection.remove(tweak.id) }
 				else { _selection.insert(tweak.id) }
 			} label: {
@@ -535,8 +543,11 @@ extension TweakLibraryList {
 	@ViewBuilder
 	private func _folderRow(_ folder: TweakFolder) -> some View {
 		NavigationLink {
+                Group {
 			TweakFolderView(folderId: folder.id)
-		} label: {
+
+                }.navigationHaptics()
+            } label: {
 			HStack(spacing: 12) {
 				Image(systemName: "folder.fill")
 					.font(.system(size: 17))
@@ -553,11 +564,13 @@ extension TweakLibraryList {
 		}
 		.swipeActions(edge: .trailing, allowsFullSwipe: false) {
 			Button(role: .destructive) {
+				AppHaptics.action()
 				manager.deleteFolder(folder.id)
 			} label: {
 				Label(.localized("Delete"), systemImage: "trash")
 			}
 			Button {
+				AppHaptics.action()
 				_folderNameField = folder.name
 				_alert = .renameFolder(folder.id)
 			} label: {
@@ -566,13 +579,14 @@ extension TweakLibraryList {
 			.tint(.gray)
 		}
 		.contextMenu {
-			Button { _shareFolder(folder.id) } label: {
+			Button { AppHaptics.action(); _shareFolder(folder.id) } label: {
 				Label(.localized("Share Folder"), systemImage: "square.and.arrow.up")
 			}
-			Button { _saveFolder(folder.id) } label: {
+			Button { AppHaptics.action(); _saveFolder(folder.id) } label: {
 				Label(.localized("Save Folder to Files"), systemImage: "arrow.down.doc")
 			}
 			Button {
+				AppHaptics.action()
 				_folderNameField = folder.name
 				_alert = .renameFolder(folder.id)
 			} label: {
@@ -580,6 +594,7 @@ extension TweakLibraryList {
 			}
 			Divider()
 			Button(role: .destructive) {
+				AppHaptics.action()
 				manager.deleteFolder(folder.id)
 			} label: {
 				Label(.localized("Delete Folder"), systemImage: "trash")

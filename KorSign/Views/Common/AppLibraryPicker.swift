@@ -58,6 +58,7 @@ struct AppLibraryPicker: View {
 	private func _rows(_ apps: [AppInfoPresentable]) -> some View {
 		ForEach(Array(apps.enumerated()), id: \.offset) { _, app in
 			Button {
+				AppHaptics.action()
 				onSelect(app)
 				if dismissOnSelect { dismiss() }
 			} label: {

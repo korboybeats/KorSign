@@ -132,6 +132,7 @@ struct SourceAppsView: View {
                         Divider()
 
                         Button {
+                            AppHaptics.action()
                             showUpdatesOnly.toggle()
                         } label: {
                             HStack {
@@ -250,12 +251,14 @@ struct SourceAppsView: View {
         if let sources = _sources, sources.count == 1 {
             if let url = sources[0].website {
                 Button(.localized("Visit Website"), systemImage: "globe") {
+                    AppHaptics.action()
                     UIApplication.open(url)
                 }
             }
 
             if let url = sources[0].patreonURL {
                 Button(.localized("Visit Patreon"), systemImage: "dollarsign.circle") {
+                    AppHaptics.action()
                     UIApplication.open(url)
                 }
             }
@@ -264,6 +267,7 @@ struct SourceAppsView: View {
         Divider()
 
         Button(.localized("Copy"), systemImage: "doc.on.doc") {
+            AppHaptics.action()
             guard !object.isEmpty else {
                 UIAlertController.showAlertWithOk(
                     title: .localized("Error"),
@@ -416,6 +420,7 @@ struct SourceAppsView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Button {
+                AppHaptics.action()
                 Task {
                     if let refreshCallback = onRefresh {
                         await refreshCallback()
@@ -492,6 +497,7 @@ struct SourceAppsView: View {
 extension SourceAppsView {
     private func _sortButton(for option: SortOption) -> some View {
         Button {
+            AppHaptics.action()
             if _sortOption == option {
                 _sortAscending.toggle()
             } else {

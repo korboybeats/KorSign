@@ -29,6 +29,7 @@ struct VersionHistoryView: View {
                     .contextMenu {
                         if let downloadURL = version.downloadURL {
                             Button {
+                                AppHaptics.action()
                                 _ = DownloadManager.shared.startDownload(
                                     from: downloadURL,
                                     id: app.currentUniqueId,
@@ -40,6 +41,7 @@ struct VersionHistoryView: View {
                             }
                             
                             Button {
+                                AppHaptics.action()
                                 UIPasteboard.general.string = downloadURL.absoluteString
                             } label: {
                                 Label(.localized("Copy Download URL"), systemImage: "doc.on.clipboard")

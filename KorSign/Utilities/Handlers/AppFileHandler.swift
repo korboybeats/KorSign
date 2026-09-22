@@ -10,6 +10,7 @@ import SwiftUI
 import OSLog
 
 final class AppFileHandler: NSObject, @unchecked Sendable {
+	let extractionBufferSize = 256 * 1024
 	private let _fileManager = FileManager.default
 	private let _uuid = UUID().uuidString
 	private let _uniqueWorkDir: URL
@@ -108,6 +109,10 @@ final class AppFileHandler: NSObject, @unchecked Sendable {
 						try ArchiveExtraction.unzip(
 							self._ipa,
 							to: self._uniqueWorkDir,
+							bufferSize: self.extractionBufferSize,
+							useZlib: true,
+							profile: { FileLogger.log("app=\(self._uuid) \($0)", category: "import-extraction") },
+							checkpoint: { try download?.importControl.checkpoint() },
 							progress: { progress in
 								if let download = download {
 									DispatchQueue.main.async {

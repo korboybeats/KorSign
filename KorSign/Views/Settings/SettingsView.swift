@@ -42,19 +42,25 @@ struct SettingsView: View {
                 _feedback()
                 
                 Section {
-                    NavigationLink(destination: AppearanceView()) {
+                    NavigationLink(destination: AppOpeningSettingsView().navigationHaptics()) {
+                        Label(.localized("App Opening"), systemImage: "arrow.right.to.line")
+                    }
+                    NavigationLink(destination: HapticsSettingsView().navigationHaptics()) {
+                        Label(.localized("Haptics"), systemImage: "waveform")
+                    }
+                    NavigationLink(destination: AppearanceView().navigationHaptics()) {
                         Label(.localized("Appearance"), systemImage: "paintbrush")
                     }
-					NavigationLink(destination: AppIconView(currentIcon: $_currentIcon)) {
+					NavigationLink(destination: AppIconView(currentIcon: $_currentIcon).navigationHaptics()) {
 						Label(.localized("App Icon"), systemImage: "app.badge")
 					}
-					NavigationLink(destination: TabBarSettingsView()) {
+					NavigationLink(destination: TabBarSettingsView().navigationHaptics()) {
 						Label(.localized("Tab Bar"), systemImage: "squares.below.rectangle")
 					}
-					NavigationLink(destination: DownloadsSettingsView()) {
+					NavigationLink(destination: DownloadsSettingsView().navigationHaptics()) {
 						Label(.localized("Downloads"), systemImage: "arrow.down.circle")
 					}
-					NavigationLink(destination: UpdatesSettingsView()) {
+					NavigationLink(destination: UpdatesSettingsView().navigationHaptics()) {
 						HStack {
 							Label(.localized("Updates"), systemImage: "arrow.triangle.2.circlepath")
 							if _selfUpdate.available != nil {
@@ -73,7 +79,7 @@ struct SettingsView: View {
                             .font(.footnote)
                             .foregroundColor(.secondary)
                     }
-                    NavigationLink(destination: CertificatesView()) {
+                    NavigationLink(destination: CertificatesView().navigationHaptics()) {
                         Label(.localized("Certificates"), systemImage: "checkmark.seal")
                     }
                 } footer: {
@@ -81,24 +87,27 @@ struct SettingsView: View {
                 }
 
                 NBSection(.localized("Features")) {
-                    NavigationLink(destination: ConfigurationView()) {
+                    NavigationLink(destination: ConfigurationView().navigationHaptics()) {
                         Label(.localized("Signing Options"), systemImage: "signature")
                     }
                     NavigationLink {
+                Group {
                         TweakLibraryList().navigationTitle(.localized("Tweaks"))
-                    } label: {
+
+                }.navigationHaptics()
+            } label: {
                         Label(.localized("Tweaks"), systemImage: "wrench.and.screwdriver")
                     }
-                    NavigationLink(destination: FilesCompressionView()) {
+                    NavigationLink(destination: FilesCompressionView().navigationHaptics()) {
                         Label(.localized("Files & Compression"), systemImage: "archivebox")
                     }
-                    NavigationLink(destination: InstallationView()) {
+                    NavigationLink(destination: InstallationView().navigationHaptics()) {
                         Label(.localized("Installation"), systemImage: "arrow.down.app")
                     }
-                    NavigationLink(destination: WebManagerView()) {
+                    NavigationLink(destination: WebManagerView().navigationHaptics()) {
                         Label(.localized("Web Manager"), systemImage: "externaldrive.badge.wifi")
                     }
-                    NavigationLink(destination: LogsHistoryView()) {
+                    NavigationLink(destination: LogsHistoryView().navigationHaptics()) {
                         Label(.localized("Activity Logs"), systemImage: "text.alignleft")
                     }
                 } footer: {
@@ -108,13 +117,13 @@ struct SettingsView: View {
                 _directories()
 
                 Section {
-                    NavigationLink(destination: StorageView()) {
+                    NavigationLink(destination: StorageView().navigationHaptics()) {
                         Label(.localized("Storage"), systemImage: "internaldrive")
                     }
-                    NavigationLink(destination: BackupView()) {
+                    NavigationLink(destination: BackupView().navigationHaptics()) {
                         Label(.localized("Backup & Restore"), systemImage: "arrow.triangle.2.circlepath")
                     }
-                    NavigationLink(destination: ResetView()) {
+                    NavigationLink(destination: ResetView().navigationHaptics()) {
                         Label(.localized("Reset"), systemImage: "trash")
                     }
                 } footer: {
@@ -130,7 +139,7 @@ extension SettingsView {
     @ViewBuilder
     private func _feedback() -> some View {
         Section {
-            NavigationLink(destination: AboutView()) {
+            NavigationLink(destination: AboutView().navigationHaptics()) {
                 Label {
                     Text(verbatim: .localized("About %@", arguments: Bundle.main.name))
                 } icon: {
@@ -139,6 +148,7 @@ extension SettingsView {
             }
             
             Button(.localized("Submit Feedback"), systemImage: "safari") {
+                AppHaptics.action()
 				let bugAction: UIAlertAction = .init(title: .localized("Bug Report"), style: .default) { _ in
 					UIApplication.open(_makeGitHubIssueURL(url: _githubUrl))
 				}
@@ -154,6 +164,7 @@ extension SettingsView {
 				)
             }
             Button(.localized("GitHub Repository"), systemImage: "safari") {
+                AppHaptics.action()
                 UIApplication.open(_githubUrl)
             }
         } footer: {
@@ -165,12 +176,15 @@ extension SettingsView {
     private func _directories() -> some View {
         NBSection(.localized("Misc")) {
             Button(.localized("Open Documents"), systemImage: "folder") {
+                AppHaptics.action()
                 UIApplication.open(URL.documentsDirectory.toSharedDocumentsURL()!)
             }
             Button(.localized("Open Archives"), systemImage: "folder") {
+                AppHaptics.action()
                 UIApplication.open(FileManager.default.archives.toSharedDocumentsURL()!)
             }
             Button(.localized("Open Certificates"), systemImage: "folder") {
+                AppHaptics.action()
                 UIApplication.open(FileManager.default.certificates.toSharedDocumentsURL()!)
             }
         } footer: {

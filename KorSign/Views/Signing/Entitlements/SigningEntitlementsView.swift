@@ -67,8 +67,9 @@ struct SigningEntitlementsView: View {
 		}
 		.alert(.localized("Rename"), isPresented: $_isRenamingPresenting, presenting: _fileToRename) { file in
 			TextField(.localized("Name"), text: $_newName)
-			Button(.localized("Cancel"), role: .cancel) {}
+			Button(.localized("Cancel"), role: .cancel) { AppHaptics.action();}
 			Button(.localized("OK")) {
+				AppHaptics.action()
 				_manager.rename(file.id, to: _newName)
 			}
 		}
@@ -90,6 +91,7 @@ extension SigningEntitlementsView {
 
 		HStack {
 			Button {
+				AppHaptics.action()
 				bindingValue = isSelected ? nil : _manager.fileURL(for: file)
 			} label: {
 				Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
@@ -99,8 +101,11 @@ extension SigningEntitlementsView {
 			.buttonStyle(.plain)
 
 			NavigationLink {
+                Group {
 				SigningEntitlementsEditorView(entry: file, certificate: certificate)
-			} label: {
+
+                }.navigationHaptics()
+            } label: {
 				VStack(alignment: .leading, spacing: 2) {
 					Text(file.name)
 					Text(file.createdAt, style: .date)
@@ -112,11 +117,13 @@ extension SigningEntitlementsView {
 		.badge(PlistDiff.flaggedCount(in: _manager.load(file, reportFailure: false) ?? [:], against: _grantedEntitlements))
 		.swipeActions(edge: .trailing) {
 			Button(role: .destructive) {
+				AppHaptics.action()
 				if _manager.delete(file.id), isSelected { bindingValue = nil }
 			} label: {
 				Label(.localized("Delete"), systemImage: "trash")
 			}
 			Button {
+				AppHaptics.action()
 				_newName = file.name
 				_fileToRename = file
 				_isRenamingPresenting = true
@@ -130,18 +137,22 @@ extension SigningEntitlementsView {
 	@ViewBuilder
 	private var _creationActions: some View {
 		Button(.localized("Import File"), systemImage: "square.and.arrow.down") {
+			AppHaptics.action()
 			_isImportPresenting = true
 		}
 		Button(.localized("Create Blank"), systemImage: "doc.badge.plus") {
+			AppHaptics.action()
 			_select(_manager.addBlank(name: .localized("New Entitlements")), push: true)
 		}
 		if let certEntitlements = _certificateEntitlements {
 			Button(.localized("From Certificate"), systemImage: "checkmark.seal") {
+				AppHaptics.action()
 				_select(_manager.add(name: .localized("From Certificate"), dict: certEntitlements), push: true)
 			}
 		}
 		if let appEntitlements = _appEntitlements {
 			Button(.localized("From App's Signature"), systemImage: "app.badge.checkmark") {
+				AppHaptics.action()
 				_select(_manager.add(name: .localized("From App's Signature"), dict: appEntitlements), push: true)
 			}
 		}

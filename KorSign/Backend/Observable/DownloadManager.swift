@@ -489,8 +489,8 @@ class DownloadManager: NSObject, ObservableObject {
 
 	func showUIErrorMessage(for download: Download, error: NSError) {
 		DispatchQueue.main.async {
-			let generator = UINotificationFeedbackGenerator()
-			generator.notificationOccurred(.error)
+
+			AppHaptics.result(.error)
 
 			self.errorDelegate?.showUIErrorMessage(
 				title: "Failed to download ipa",
@@ -575,7 +575,12 @@ class DownloadManager: NSObject, ObservableObject {
 			FR.handlePackageFile(url, download: download) { result in
 				switch result {
 				case .failure(let error):
-					UINotificationFeedbackGenerator().notificationOccurred(.error)
+                    if download.importControl.isCancelled {
+                        completion?(nil)
+                        self.finishImport(of: download, succeeded: false)
+                        return
+                    }
+					AppHaptics.result(.error)
 
 					if let completion = completion {
 						// Caller owns the error UI; don't also fire the generic delegate alert.
@@ -607,6 +612,11 @@ class DownloadManager: NSObject, ObservableObject {
 			DispatchQueue.main.async { self.resumeDownload(download) }
 			return
 		}
+        guard downloads.contains(where: { $0 === download }) else { return }
+        if download.isImporting {
+            if download.importControl.setPaused(false) { download.isPaused = false; objectWillChange.send(); FileLogger.log("import resumed id=\(download.id)", category: "import-control") }
+            return
+        }
 		guard downloads.contains(where: { $0 === download }), download.isPaused,
 			!download.onlyArchiving, !download.isImporting, !download.isSigning,
 			download.pendingFileURL == nil else { return }
@@ -654,6 +664,11 @@ class DownloadManager: NSObject, ObservableObject {
 			DispatchQueue.main.async { self.pauseDownload(download) }
 			return
 		}
+        guard downloads.contains(where: { $0 === download }) else { return }
+        if download.isImporting {
+            if download.importControl.setPaused(true) { download.isPaused = true; objectWillChange.send(); FileLogger.log("import pause requested id=\(download.id)", category: "import-control") }
+            return
+        }
 		guard downloads.contains(where: { $0 === download }), !download.onlyArchiving,
 			!download.isImporting, !download.isSigning, download.pendingFileURL == nil else { return }
 		download.resumeAfterPause = false
@@ -678,6 +693,12 @@ class DownloadManager: NSObject, ObservableObject {
 			DispatchQueue.main.async { self.cancelDownload(download) }
 			return
 		}
+        guard downloads.contains(where: { $0 === download }) else { return }
+        if download.isImporting {
+            download.importControl.cancel(); download.isPaused = false; objectWillChange.send()
+            FileLogger.log("import stop requested id=\(download.id) accepted=\(download.importControl.isCancelled)", category: "import-control")
+            return
+        }
 		guard downloads.contains(where: { $0 === download }),
 			!download.isImporting, !download.isSigning else { return }
 		let task = download.task
@@ -774,7 +795,11 @@ class DownloadManager: NSObject, ObservableObject {
 		FR.handlePackageFile(url, download: dl) { result in
 			switch result {
 			case .failure(let error):
-				UINotificationFeedbackGenerator().notificationOccurred(.error)
+                if dl.importControl.isCancelled {
+                    self.finishImport(of: dl, succeeded: false)
+                    return
+                }
+				AppHaptics.result(.error)
 
 				if self.isAppInBackground {
 					self.sendCompletionNotification(for: dl, status: "❌ Import failed: \(error.localizedDescription)")
@@ -840,8 +865,8 @@ class DownloadManager: NSObject, ObservableObject {
 		endImport(for: download)
 
 		// Drop from activity tracking only once archiving completes (not on download finish).
-		if succeeded {
-			completedDownloadNames.append(download.fileName)
+		if succeeded || download.importControl.isCancelled {
+			if succeeded { completedDownloadNames.append(download.fileName) }
 			allActivityDownloads.removeValue(forKey: download.id)
 			finishedDownloadingIDs.remove(download.id)
 		}

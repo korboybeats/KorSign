@@ -64,6 +64,7 @@ struct SourceAppsDetailView: View {
 
 							if let bundleId = app.id {
 								Button {
+									AppHaptics.action()
 									AppStoreHelper.openAppStore(for: bundleId) { result in
 										if case .failure(let error) = result {
 											DispatchQueue.main.async {
@@ -130,7 +131,7 @@ struct SourceAppsDetailView: View {
                                 destination: VersionHistoryView(app: app, versions: versions)
                                     .navigationTitle(.localized("Version History"))
                                     .navigationBarTitleDisplayMode(.large)
-                            ) {
+                            .navigationHaptics()) {
                                 Text(.localized("Version History"))
                             }
                         }
@@ -149,6 +150,7 @@ struct SourceAppsDetailView: View {
 
 					ForEach(app.descriptionLinks) { link in
 						Button {
+							AppHaptics.action()
 							link.tag.open(link.url)
 						} label: {
 							HStack {
@@ -200,6 +202,7 @@ struct SourceAppsDetailView: View {
 
 						if let bundleId = app.id {
 							Button {
+								AppHaptics.action()
 								AppStoreHelper.openAppStore(for: bundleId) { result in
 									if case .failure(let error) = result {
 										DispatchQueue.main.async {
@@ -394,6 +397,7 @@ extension SourceAppsDetailView {
 		LabeledContent(title, value: value)
 			.contextMenu {
 				Button {
+					AppHaptics.action()
 					UIPasteboard.general.string = value
 				} label: {
 					Label(.localized("Copy"), systemImage: "doc.on.doc")

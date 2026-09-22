@@ -71,24 +71,33 @@ struct BatchSignView: View {
 				NBSection(.localized("Signing")) {
 					if let cert = _selectedCert() {
 						NavigationLink {
+                Group {
 							CertificatesView(selectedCert: $_selectedCertificate)
-						} label: {
+
+                }.navigationHaptics()
+            } label: {
 							CertificatesCellView(cert: cert)
 						}
 					} else {
-						NavigationLink(.localized("Select Certificate")) { CertificatesView(selectedCert: $_selectedCertificate) }
+						NavigationLink(.localized("Select Certificate")) {
+                Group { CertificatesView(selectedCert: $_selectedCertificate)
+                }.navigationHaptics()
+            }
 							.font(.footnote)
 					}
 				}
 
 				NBSection(.localized("Advanced")) {
 					NavigationLink {
+                Group {
 						Form { SigningOptionsView(
 							options: $_options,
 							temporaryOptions: .batchBase
 						)}
 						.navigationTitle(.localized("Properties"))
-					} label: {
+
+                }.navigationHaptics()
+            } label: {
 						Label(.localized("Properties"), systemImage: "slider.horizontal.3")
 					}
 				} footer: {
@@ -161,6 +170,7 @@ struct BatchSignView: View {
 			_appLabel(for: app)
 		} else {
 			NavigationLink {
+                Group {
 				BatchAppOptionsView(
 					app: app,
 					identifierSuggestion: _provisioningIdentifier(),
@@ -169,7 +179,9 @@ struct BatchSignView: View {
 					certificate: _selectedCert(),
 					onReset: { _reset(app) }
 				)
-			} label: {
+
+                }.navigationHaptics()
+            } label: {
 				_appLabel(for: app)
 			}
 		}
@@ -384,7 +396,7 @@ struct BatchSignView: View {
 			return
 		}
 
-		NBHaptic.tap()
+		AppHaptics.action()
 		_runner = BatchJobRunner(
 			apps: apps,
 			mode: mode,

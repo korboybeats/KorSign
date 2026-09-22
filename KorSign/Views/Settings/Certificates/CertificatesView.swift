@@ -50,6 +50,7 @@ struct CertificatesView: View {
 					description: .localized("Get started signing by importing your first certificate.")
 				) {
 					Button {
+						AppHaptics.action()
 						_isAddingPresenting = true
 					} label: {
 						NBButton(.localized("Import"), style: .text)
@@ -77,8 +78,9 @@ struct CertificatesView: View {
 		}
 		.alert(.localized("Change Nickname"), isPresented: $_isRenamingPresenting, presenting: _certToRename) { cert in
 			TextField(.localized("Nickname"), text: $_newNickname)
-			Button(.localized("Cancel"), role: .cancel) { }
+			Button(.localized("Cancel"), role: .cancel) { AppHaptics.action(); }
 			Button(.localized("OK")) {
+				AppHaptics.action()
 				cert.nickname = _newNickname.isEmpty ? nil : _newNickname
 				Storage.shared.saveContext()
 			}
@@ -93,6 +95,7 @@ extension CertificatesView {
 		let cornerRadius = NBRadius.large
 
 		Button {
+			AppHaptics.action()
 			_selectedCertBinding.wrappedValue = cert.uuid ?? ""
 		} label: {
 			CertificatesCellView(
@@ -125,6 +128,7 @@ extension CertificatesView {
 	@ViewBuilder
 	private func _actions(for cert: CertificatePair) -> some View {
 		Button(.localized("Delete"), systemImage: "trash", role: .destructive) {
+			AppHaptics.action()
 			Storage.shared.deleteCertificate(for: cert)
 		}
 	}
@@ -132,14 +136,17 @@ extension CertificatesView {
 	@ViewBuilder
 	private func _contextActions(for cert: CertificatePair) -> some View {
 		Button(.localized("Get Info"), systemImage: "info.circle") {
+			AppHaptics.action()
 			Presentation.afterDismiss { _isSelectedInfoPresenting = cert }
 		}
 		Button(.localized("Change Nickname"), systemImage: "pencil") {
+			AppHaptics.action()
 			_newNickname = cert.nickname ?? ""
 			_certToRename = cert
 			Presentation.afterDismiss { _isRenamingPresenting = true }
 		}
 		Button(.localized("Export Certificate"), systemImage: "square.and.arrow.up") {
+			AppHaptics.action()
 			if let zip = CertificateExporter.makeZip(for: cert) {
 				UIActivityViewController.show(activityItems: [zip.url], retaining: zip)
 			} else {
@@ -148,6 +155,7 @@ extension CertificatesView {
 		}
 		Divider()
 		Button(.localized("Check Revokage"), systemImage: "person.text.rectangle") {
+			AppHaptics.action()
 			Storage.shared.revokagedCertificate(for: cert)
 		}
 	}

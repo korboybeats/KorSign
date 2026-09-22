@@ -28,7 +28,7 @@ struct UpdatesSettingsView: View {
 			_optionsSection
 			if !_manager.ignoredVersions.isEmpty { _ignoredSection }
 			Section {
-				NavigationLink(destination: AllVersionsView()) {
+				NavigationLink(destination: AllVersionsView().navigationHaptics()) {
 					Label(.localized("All Versions"), systemImage: "square.stack.3d.up")
 				}
 			}
@@ -48,14 +48,14 @@ struct UpdatesSettingsView: View {
 			HStack {
 				Text(.localized("Installed"))
 				Spacer()
-				Text(Bundle.main.version).foregroundStyle(.secondary)
+				Text(SelfUpdateManager.installedVersion).foregroundStyle(.secondary)
 			}
 			if let available = _manager.available {
 				HStack {
 					Label(String.localized("Update available: %@", arguments: available.version), systemImage: "arrow.up.circle.fill")
 						.foregroundStyle(Color.accentColor)
 					Spacer()
-					Button(.localized("View")) { _selected = available }
+					Button(.localized("View")) { AppHaptics.action(); _selected = available }
 						.font(.subheadline.bold())
 				}
 			} else if let latest = _manager.latest {
@@ -65,11 +65,12 @@ struct UpdatesSettingsView: View {
 						Text(latest.title).font(.caption).foregroundStyle(.secondary).lineLimit(1)
 					}
 					Spacer()
-					Button(latest.isInstalled ? .localized("Reinstall") : .localized("Install")) { _selected = latest }
+					Button(latest.isInstalled ? .localized("Reinstall") : .localized("Install")) { AppHaptics.action(); _selected = latest }
 						.font(.subheadline.bold())
 				}
 			}
 			Button {
+				AppHaptics.action()
 				Task { await _manager.check() }
 			} label: {
 				HStack {
@@ -113,11 +114,13 @@ struct UpdatesSettingsView: View {
 			if _method == 1 {
 				Section {
 					Button {
+						AppHaptics.action()
 						UIApplication.open("localdevvpn://enable?scheme=feather")
 					} label: {
 						Label(.localized("Connect to LocalDevVPN"), systemImage: "link")
 					}
 					Button {
+						AppHaptics.action()
 						UIApplication.open("https://apps.apple.com/us/app/localdevvpn/id6755608044")
 					} label: {
 						Label(.localized("Download LocalDevVPN"), systemImage: "arrow.down.app")
@@ -148,7 +151,7 @@ struct UpdatesSettingsView: View {
 				HStack {
 					Text(version)
 					Spacer()
-					Button(.localized("Resume")) { _manager.unignore(version) }
+					Button(.localized("Resume")) { AppHaptics.action(); _manager.unignore(version) }
 						.font(.subheadline)
 				}
 			}

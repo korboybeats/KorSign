@@ -13,28 +13,30 @@
       "bundleIdentifier": "com.korboy.korsign",
       "developerName": "Korboy",
       "subtitle": "On-device iOS app signer and installer.",
-      "localizedDescription": "KorSign is an on-device app signer and installer for iOS, derived from Feather (by claration). Sign and install apps with a .p12 / .mobileprovision pair, manage tweaks (.dylib/.deb/.framework/.bundle/.appex), transfer files over HTTP/WebDAV, and track app updates \u2014 entirely on-device.",
+      "localizedDescription": "KorSign is an on-device app signer and installer for iOS, derived from Feather (by claration). Sign and install apps with a .p12 / .mobileprovision pair, manage tweaks (.dylib/.deb/.framework/.bundle/.appex), transfer files over HTTP/WebDAV, and track app updates — entirely on-device.",
       "iconURL": "https://raw.githubusercontent.com/korboybeats/KorSign/refs/heads/main/repo-icon.png",
       "tintColor": "FFAC15",
       "category": "utilities",
       "version": "3.0.1",
-      "versionDate": "2026-09-08",
+      "versionDate": "2026-09-22T10:04:01Z",
       "versionDescription": "See the GitHub release notes.",
-      "downloadURL": "https://github.com/korboybeats/KorSign/releases/download/v3.0.1/KorSign.ipa",
-      "size": 22327587,
+      "downloadURL": "https://github.com/korboybeats/KorSign/releases/download/v3.0.1-r1/KorSign.ipa",
+      "size": 22381161,
       "screenshotURLs": [],
       "versions": [
         {
           "version": "3.0.1",
-          "date": "2026-09-08",
-          "downloadURL": "https://github.com/korboybeats/KorSign/releases/download/v3.0.1/KorSign.ipa",
-          "size": 22327587
+          "buildVersion": "1",
+          "date": "2026-09-22T10:04:01Z",
+          "size": 22381161,
+          "downloadURL": "https://github.com/korboybeats/KorSign/releases/download/v3.0.1-r1/KorSign.ipa"
         }
       ],
       "appPermissions": {
         "entitlements": [],
         "privacy": {}
-      }
+      },
+      "buildVersion": "1"
     }
   ],
   "news": []

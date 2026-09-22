@@ -29,10 +29,18 @@ final class AutoSignManager {
 
 	/// One app at a time. Signing is memory heavy and `SigningLog` is a single shared console.
 	func sign(_ app: AppInfoPresentable) async -> Result<Signed, Error> {
+		let queuedAt = ProcessInfo.processInfo.systemUptime
+		let appID = app.uuid ?? "unknown"
 		let previous = _tail
 		let job = Task { () -> Result<Signed, Error> in
 			await previous.value
-			return await Self._perform(app)
+			let started = ProcessInfo.processInfo.systemUptime
+			FileLogger.log("app=\(appID) stage=auto-sign-queue seconds=\(started - queuedAt)", category: "import-timing")
+			let result = await Self._perform(app)
+			let succeeded: Bool
+			if case .success = result { succeeded = true } else { succeeded = false }
+			FileLogger.log("app=\(appID) stage=auto-sign seconds=\(ProcessInfo.processInfo.systemUptime - started) succeeded=\(succeeded)", category: "import-timing")
+			return result
 		}
 
 		_tail = Task { _ = await job.value }

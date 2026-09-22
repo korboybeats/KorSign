@@ -26,12 +26,10 @@ struct DownloadBubbleOverlayContainer: View {
             .zIndex(1)
             .transition(.scale(scale: 0.1).combined(with: .opacity))
 
-            if showOverlay {
-                DownloadOverlaySheetWrapper(
-                    downloadManager: downloadManager,
-                    isPresented: $showOverlay
-                )
-            }
+            DownloadOverlaySheetWrapper(
+                downloadManager: downloadManager,
+                isPresented: $showOverlay
+            )
         }
         // Animate only on active-count change, not every child update
         .animation(.spring(response: 0.5, dampingFraction: 0.7), value: hasActiveDownloads)

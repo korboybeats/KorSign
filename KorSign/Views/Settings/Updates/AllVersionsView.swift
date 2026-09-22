@@ -45,7 +45,7 @@ struct AllVersionsView: View {
 	var body: some View {
 		NBList(.localized("All Versions"), type: .list) {
 			ForEach(_filtered) { release in
-				Button { _selected = release } label: { _row(release) }
+				Button { AppHaptics.action(); _selected = release } label: { _row(release) }
 					.tint(.primary)
 					.listRowBackground(release.isInstalled ? Color.accentColor.opacity(0.12) : nil)
 					.onAppear {
@@ -130,7 +130,7 @@ struct AllVersionsView: View {
 
 	@ViewBuilder
 	private func _badge(_ release: SelfUpdateRelease) -> some View {
-		let cmp = SelfUpdateManager.compare(release.version, Bundle.main.version)
+		let cmp = SelfUpdateManager.compare(release.version, SelfUpdateManager.installedVersion)
 		if cmp == .orderedSame {
 			Label(.localized("Installed"), systemImage: "checkmark.circle.fill")
 				.labelStyle(.titleAndIcon)

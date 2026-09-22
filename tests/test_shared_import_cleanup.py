@@ -9,7 +9,7 @@ a = app.index('let tempDir = FileManager.default.uniqueTemporaryDirectory("Feath
 b = app.index('// Tweak files shared into the app', a)
 ipa = app[a:b]
 ipa = ipa[:ipa.rfind('\n\t\t\t}')]
-a = app.index('let generator = UINotificationFeedbackGenerator()', app.index('if url.host == "import-certificate"'))
+a = app.index('let p12URL = FileManager.default.decodeAndWrite', app.index('if url.host == "import-certificate"'))
 b = app.index('/// feather://export-certificate', a)
 cert = app[a:b]
 cert = cert[:cert.rfind('\n\t\t\t}')]
@@ -50,6 +50,7 @@ enum Toast {
     static func error(_ value: String, duration: Duration) {}
     static func success(_ value: String, systemImage: String) {}
 }
+enum AppHaptics { static func result(_ kind: UINotificationFeedbackGenerator.Kind) {} }
 final class UINotificationFeedbackGenerator {
     enum Kind { case error, success }
     func prepare() {}

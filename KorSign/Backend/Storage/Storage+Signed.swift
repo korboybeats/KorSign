@@ -6,7 +6,6 @@
 //
 
 import CoreData
-import UIKit.UIImpactFeedbackGenerator
 
 // MARK: - Class extension: Signed Apps
 extension Storage {
@@ -25,7 +24,7 @@ extension Storage {
         completion: @escaping (Result<Signed, Error>) -> Void
     ) {
         context.performAndWait {
-            let generator = UIImpactFeedbackGenerator(style: .light)
+
 
             let new = Signed(context: context)
 
@@ -45,7 +44,7 @@ extension Storage {
 
             switch saveContext() {
             case .success:
-                generator.impactOccurred()
+
                 completion(.success(new))
             case .failure(let error):
                 completion(.failure(error))

@@ -44,8 +44,11 @@ struct SigningInfoPlistView: View {
 		NBList(.localized("Info.plist")) {
 			Section {
 				NavigationLink {
+                Group {
 					SigningInfoPlistBackgroundModesView(options: $options, original: _original)
-				} label: {
+
+                }.navigationHaptics()
+            } label: {
 					Text(.localized("Background Modes"))
 				}
 				.badge(merged.backgroundModes.count)
@@ -121,6 +124,7 @@ extension SigningInfoPlistView {
 	private func _toolbar(for merged: MergedInfoPlist) -> some ToolbarContent {
 		ToolbarItem(placement: .topBarLeading) {
 			Button(_editMode.isEditing ? .localized("Done") : .localized("Select")) {
+				AppHaptics.action()
 				_toggleSelectMode()
 			}
 		}
@@ -137,6 +141,7 @@ extension SigningInfoPlistView {
 				let changedCount = merged.changedCount
 
 				Button {
+					AppHaptics.action()
 					_changedOnly.toggle()
 				} label: {
 					Image(systemName: "line.3.horizontal.decrease")
@@ -157,6 +162,7 @@ extension SigningInfoPlistView {
 	@ViewBuilder
 	private func _selectionActions(for merged: MergedInfoPlist) -> some View {
 		Button(.localized("Copy"), systemImage: "doc.on.doc") {
+			AppHaptics.action()
 			_clipboard.set(_selectedKeys.reduce(into: [String: Any]()) { result, key in
 				result[key] = merged.value(for: key)
 			})
@@ -165,12 +171,14 @@ extension SigningInfoPlistView {
 		.disabled(_selectedKeys.isEmpty)
 
 		Button(.localized("Reset"), systemImage: "arrow.uturn.backward") {
+			AppHaptics.action()
 			_selectedKeys.forEach { _reset($0) }
 			_toggleSelectMode()
 		}
 		.disabled(!_selectedKeys.contains(where: merged.isEdited))
 
 		Button(.localized("Delete"), systemImage: "trash", role: .destructive) {
+			AppHaptics.action()
 			_selectedKeys.forEach { _remove($0) }
 			_toggleSelectMode()
 		}
@@ -179,9 +187,11 @@ extension SigningInfoPlistView {
 		Divider()
 
 		Button(.localized("Select All"), systemImage: "checkmark.circle") {
+			AppHaptics.action()
 			_selectedKeys = Set(_keys(in: merged))
 		}
 		Button(.localized("Deselect All"), systemImage: "circle") {
+			AppHaptics.action()
 			_selectedKeys.removeAll()
 		}
 		.disabled(_selectedKeys.isEmpty)
@@ -190,12 +200,15 @@ extension SigningInfoPlistView {
 	@ViewBuilder
 	private func _addMenu(for merged: MergedInfoPlist) -> some View {
 		Button(.localized("Add Entry"), systemImage: "plus") {
+			AppHaptics.action()
 			_presentDraft(kind: .string)
 		}
 		Button(.localized("Add Dictionary"), systemImage: "curlybraces") {
+			AppHaptics.action()
 			_presentDraft(kind: .dictionary)
 		}
 		Button(.localized("Add Array"), systemImage: "list.bullet") {
+			AppHaptics.action()
 			_presentDraft(kind: .array)
 		}
 		Menu(.localized("Common Keys")) {
@@ -203,6 +216,7 @@ extension SigningInfoPlistView {
 				Menu(group.title) {
 					ForEach(group.keys.filter { merged.value(for: $0.key) == nil }) { entry in
 						Button(entry.key) {
+							AppHaptics.action()
 							_presentDraft(key: entry.key, value: entry.value)
 						}
 					}
@@ -211,6 +225,7 @@ extension SigningInfoPlistView {
 		}
 		if !_clipboard.entries.isEmpty {
 			Button(.localized("Paste"), systemImage: "doc.on.clipboard") {
+				AppHaptics.action()
 				_clipboard.entries.forEach { _set($0.value, for: $0.key, replacing: nil) }
 			}
 		}
@@ -218,12 +233,14 @@ extension SigningInfoPlistView {
 		Divider()
 
 		Button(.localized("Edit Raw"), systemImage: "chevron.left.forwardslash.chevron.right") {
+			AppHaptics.action()
 			_showsRaw = true
 			_isDraftPresenting = true
 		}
 
 		if options.infoPlistChangeCount > 0 {
 			Button(.localized("Reset All Changes"), systemImage: "arrow.triangle.2.circlepath", role: .destructive) {
+				AppHaptics.action()
 				options.infoPlistOverrides = nil
 				options.infoPlistRemovals = nil
 			}
@@ -264,6 +281,7 @@ extension SigningInfoPlistView {
 		.swipeActions(edge: .trailing) {
 			if status != .removed {
 				Button(role: .destructive) {
+					AppHaptics.action()
 					_remove(key)
 				} label: {
 					Label(.localized("Remove"), systemImage: "trash")
@@ -271,6 +289,7 @@ extension SigningInfoPlistView {
 			}
 			if merged.isEdited(key) {
 				Button {
+					AppHaptics.action()
 					_reset(key)
 				} label: {
 					Label(.localized("Reset"), systemImage: "arrow.uturn.backward")
@@ -285,6 +304,7 @@ extension SigningInfoPlistView {
 		let isSelected = _selectedKeys.contains(key)
 
 		Button {
+			AppHaptics.action()
 			if isSelected { _selectedKeys.remove(key) } else { _selectedKeys.insert(key) }
 		} label: {
 			HStack {
@@ -304,6 +324,7 @@ extension SigningInfoPlistView {
 			let kind = PlistValueKind.kind(for: value)
 		{
 			NavigationLink {
+                Group {
 				if kind.isContainer {
 					PlistNodeView(title: key, value: value) { newValue in
 						_set(newValue, for: key, replacing: nil)
@@ -318,7 +339,9 @@ extension SigningInfoPlistView {
 						_set(newValue, for: newKey, replacing: key)
 					}
 				}
-			} label: {
+
+                }.navigationHaptics()
+            } label: {
 				_label(key: key, value: value, status: status)
 			}
 		} else {

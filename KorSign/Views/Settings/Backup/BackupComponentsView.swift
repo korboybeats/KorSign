@@ -64,6 +64,7 @@ struct BackupComponentsView: View {
 					}
 
 					Button(.localized("Select All")) {
+						AppHaptics.action()
 						_selection = available
 					}
 					.disabled(_selection == available)

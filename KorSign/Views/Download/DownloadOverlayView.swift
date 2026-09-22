@@ -70,6 +70,7 @@ struct DownloadOverlaySheetContent: View {
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
                             Text(.localized("Downloads"))
                                 .font(.title2.weight(.semibold))
+                                .lineLimit(1)
 
                             if !activeDownloads.isEmpty {
                                 Text("• \(activeDownloads.count) active")
@@ -81,9 +82,30 @@ struct DownloadOverlaySheetContent: View {
 
                     Spacer()
 
+                        Button {
+                            AppHaptics.action()
+                            isPresented = false
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.title3.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .frame(width: 28, height: 28)
+                                .background(Color.secondary.opacity(0.1))
+                                .clipShape(Circle())
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Close downloads")
+                        .layoutPriority(1)
+                }
+
+                if !activeDownloads.isEmpty {
                     HStack(spacing: 8) {
+                        Spacer(minLength: 0)
                         if !activeDownloads.isEmpty {
                             Button {
+                                AppHaptics.action()
                                 if isPaused {
                                     DownloadManager.shared.resumeAllDownloads()
                                 } else {
@@ -109,6 +131,7 @@ struct DownloadOverlaySheetContent: View {
 
                         if !activeDownloads.isEmpty {
                             Button {
+                                AppHaptics.action()
                                 for download in activeDownloads {
                                     DownloadManager.shared.cancelDownload(download)
                                 }
@@ -133,19 +156,6 @@ struct DownloadOverlaySheetContent: View {
                             .fixedSize()
                         }
 
-                        Button {
-                            DispatchQueue.main.async {
-                                isPresented = false
-                            }
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.title3.weight(.medium))
-                                .foregroundStyle(.secondary)
-                                .frame(width: 28, height: 28)
-                                .background(Color.secondary.opacity(0.1))
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(.plain)
                     }
                 }
 

@@ -68,6 +68,7 @@ extension SigningTweaksView {
 			}
 
 			Button {
+				AppHaptics.action()
 				_isLibraryPickerPresenting = true
 			} label: {
 				Label(.localized("Add From Library"), systemImage: "books.vertical")
@@ -80,8 +81,11 @@ extension SigningTweaksView {
 	@ViewBuilder
 	private func _libraryRow(spec: Binding<TweakInjectionSpec>) -> some View {
 		NavigationLink {
+                Group {
 			TweakInjectConfigView(app: app, spec: spec)
-		} label: {
+
+                }.navigationHaptics()
+            } label: {
 			HStack {
 				Toggle(isOn: spec.enabled) {
 					EmptyView()
@@ -99,6 +103,7 @@ extension SigningTweaksView {
 		}
 		.swipeActions(edge: .trailing, allowsFullSwipe: true) {
 			Button(role: .destructive) {
+				AppHaptics.action()
 				options.tweakInjections?.removeAll { $0.id == spec.wrappedValue.id }
 			} label: {
 				Label(.localized("Remove"), systemImage: "minus.circle")
@@ -163,6 +168,7 @@ extension SigningTweaksView {
 	@ViewBuilder
 	private func _fileActions(tweak: URL) -> some View {
 		Button(role: .destructive) {
+			AppHaptics.action()
 			FileManager.default.deleteStored(tweak) { url in
 				if let index = options.injectionFiles.firstIndex(where: { $0 == url }) {
 					options.injectionFiles.remove(at: index)
@@ -261,10 +267,11 @@ private struct SigningLibraryTweakPicker: View {
 			}
 			.toolbar {
 				ToolbarItem(placement: .topBarLeading) {
-					Button(.localized("Cancel")) { dismiss() }
+					Button(.localized("Cancel")) { AppHaptics.action(); dismiss() }
 				}
 				ToolbarItem(placement: .topBarTrailing) {
 					Button(_selection.isEmpty ? .localized("Add") : String.localized("Add %lld", arguments: _selection.count)) {
+						AppHaptics.action()
 						_addSelected()
 					}
 					.fontWeight(.semibold)
@@ -273,6 +280,7 @@ private struct SigningLibraryTweakPicker: View {
 				ToolbarItem(placement: .bottomBar) {
 					HStack {
 						Button(_selection == _allIds && !_allIds.isEmpty ? .localized("Deselect All") : .localized("Select All")) {
+							AppHaptics.action()
 							withAnimation(.smooth) {
 								_selection = (_selection == _allIds) ? [] : _allIds
 							}
@@ -325,6 +333,7 @@ private struct SigningLibraryTweakPicker: View {
 	private func _row(_ tweak: ManagedTweak) -> some View {
 		let isOn = _selection.contains(tweak.id)
 		Button {
+			AppHaptics.action()
 			if isOn { _selection.remove(tweak.id) } else { _selection.insert(tweak.id) }
 		} label: {
 			HStack(spacing: 12) {

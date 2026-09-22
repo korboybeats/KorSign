@@ -45,12 +45,11 @@ jobs:
 
       - name: Compile KorSign
         run: | 
-          agvtool new-version -all $(git rev-parse HEAD)
           make
 
       - name: Validate and stage Main
         run: |
-          python3 tools/validate_ipa.py packages/KorSign.ipa --deps deps --expected-build "$(git rev-parse HEAD)" > validation.json
+          python3 tools/validate_ipa.py packages/KorSign.ipa --deps deps --expected-build "$(sed -n 's/.*CURRENT_PROJECT_VERSION = \([0-9]*\);/\1/p' KorSign.xcodeproj/project.pbxproj | head -1)" > validation.json
           mkdir upload
           cp packages/KorSign.ipa upload/KorSign.ipa
 
@@ -59,6 +58,8 @@ jobs:
         run: |
           VERSION=$(python3 -c 'import json; print(json.load(open("validation.json"))["version"])')
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          REVISION=$(python3 -c 'import json; print(json.load(open("validation.json"))["build"])')
+          echo "REVISION=${REVISION}" >> $GITHUB_ENV
 
       - name: Create Release
         if: ${{ inputs.publish }}

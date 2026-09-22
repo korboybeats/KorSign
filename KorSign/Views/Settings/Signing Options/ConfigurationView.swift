@@ -24,7 +24,7 @@ struct ConfigurationView: View {
                         keyKind: .displayName,
                         dataDict: $_optionsManager.options.displayNames
                     )
-                ) {
+                .navigationHaptics()) {
                     Label(.localized("Display Names"), systemImage: "character.cursor.ibeam")
                 }
                 NavigationLink(destination: ConfigurationDictView(
@@ -32,7 +32,7 @@ struct ConfigurationView: View {
                         keyKind: .identifier,
                         dataDict: $_optionsManager.options.identifiers
                     )
-                ) {
+                .navigationHaptics()) {
                     Label(.localized("Identifiers"), systemImage: "person.text.rectangle")
                 }
             }footer: {
@@ -70,9 +70,11 @@ extension ConfigurationView {
 	private func _randomMenuItem() -> some View {
 		Section(_optionsManager.options.ppqString) {
 			Button(.localized("Change")) {
+				AppHaptics.action()
 				isRandomAlertPresenting = true
 			}
 			Button(.localized("Copy")) {
+				AppHaptics.action()
 				UIPasteboard.general.string = _optionsManager.options.ppqString
 			}
 		}
@@ -82,11 +84,12 @@ extension ConfigurationView {
 	private func _randomMenuAlert() -> some View {
 		TextField(.localized("String"), text: $randomString)
 		Button(.localized("Save")) {
+			AppHaptics.action()
 			if !randomString.isEmpty {
 				_optionsManager.options.ppqString = randomString
 			}
 		}
 		
-		Button(.localized("Cancel"), role: .cancel) {}
+		Button(.localized("Cancel"), role: .cancel) { AppHaptics.action();}
 	}
 }

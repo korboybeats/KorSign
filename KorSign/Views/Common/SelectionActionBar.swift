@@ -35,6 +35,7 @@ struct SelectionActionBar: View {
 		HStack(spacing: 2) {
 			ForEach(actions) { action in
 				Button(role: action.role) {
+					AppHaptics.action()
 					action.action()
 				} label: {
 					VStack(spacing: 3) {

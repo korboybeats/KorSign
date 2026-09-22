@@ -19,8 +19,8 @@ with tempfile.TemporaryDirectory() as root:
         work_paths.append(destination.parent)
         with zipfile.ZipFile(destination, 'w') as archive:
             archive.writestr('Payload/KorSign.app/Info.plist', plistlib.dumps({
-                'CFBundleIdentifier': bundle, 'CFBundleShortVersionString': version,
-                'CFBundleVersion': '42', 'CFBundleDisplayName': 'KorSign'}))
+                'CFBundleIdentifier': bundle, 'CFBundleShortVersionString': version.split('-r')[0],
+                'CFBundleVersion': version.split('-r')[1] if '-r' in version else '42', 'CFBundleDisplayName': 'KorSign'}))
             archive.writestr('Payload/KorSign.app/test', bytes(range(256)) * 512)
 
     def signer(args, **kwargs):
@@ -57,6 +57,9 @@ with tempfile.TemporaryDirectory() as root:
             ranged = client.get(path, headers={'Range': 'bytes=10-29'})
             assert ranged.status_code == 206 and ranged.data == get.data[10:30]
             assert client.get(path.replace('app.ipa', 'certificate.p12')).status_code == 404
+        assert post(version="3.0.1-r1").status_code == 200
+        with patch.object(service, 'fetch_release', lambda version, bundle, destination: release('3.0.1-r2', bundle, destination)):
+            assert post(version="3.0.1-r1").status_code == 422
         assert all(not p.exists() for p in work_paths)
         with patch.object(service.subprocess, 'run', side_effect=service.subprocess.TimeoutExpired('zsign', 120)):
             assert post().status_code == 422

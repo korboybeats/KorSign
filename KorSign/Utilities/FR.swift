@@ -21,18 +21,40 @@ enum FR {
 	) {
 		Task.detached {
 			let handler = AppFileHandler(file: ipa, download: download)
+			let timingID = UUID().uuidString
+			let started = ProcessInfo.processInfo.systemUptime
+			var stage = "readiness"
+			var stageStarted = started
+			let bytes = (try? ipa.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+			FileLogger.log("id=\(timingID) started bytes=\(bytes) buffer=\(handler.extractionBufferSize)", category: "import-timing")
 			
 			do {
 				try await MainActor.run { try Storage.shared.requireReady() }
+				stage = "copy"
+				stageStarted = ProcessInfo.processInfo.systemUptime
 				try await handler.copy()
+				FileLogger.log("id=\(timingID) stage=copy seconds=\(ProcessInfo.processInfo.systemUptime - stageStarted)", category: "import-timing")
+				stage = "extract"
+				stageStarted = ProcessInfo.processInfo.systemUptime
 				try await handler.extract()
+				FileLogger.log("id=\(timingID) stage=extract seconds=\(ProcessInfo.processInfo.systemUptime - stageStarted)", category: "import-timing")
+				stage = "move"
+				stageStarted = ProcessInfo.processInfo.systemUptime
+				try download?.importControl.beginCommit()
 				try await handler.move()
+				FileLogger.log("id=\(timingID) stage=move seconds=\(ProcessInfo.processInfo.systemUptime - stageStarted)", category: "import-timing")
+				stage = "library-save"
+				stageStarted = ProcessInfo.processInfo.systemUptime
 				let app = try await handler.addToDatabase()
+				FileLogger.log("id=\(timingID) stage=library-save seconds=\(ProcessInfo.processInfo.systemUptime - stageStarted)", category: "import-timing")
+				let appID = await MainActor.run { app.uuid ?? "unknown" }
 				try? await handler.clean()
+				FileLogger.log("id=\(timingID) app=\(appID) complete seconds=\(ProcessInfo.processInfo.systemUptime - started)", category: "import-timing")
 				await MainActor.run {
 					completion(.success(app))
 				}
 			} catch {
+				FileLogger.log("id=\(timingID) failed stage=\(stage) stageSeconds=\(ProcessInfo.processInfo.systemUptime - stageStarted) totalSeconds=\(ProcessInfo.processInfo.systemUptime - started)", category: "import-timing")
 				try? await handler.clean()
 				await MainActor.run {
 					completion(.failure(error))
@@ -155,8 +177,7 @@ enum FR {
 		from urlString: String,
 		completion: @escaping (Bool) -> Void
 	) {
-		let generator = UINotificationFeedbackGenerator()
-		generator.prepare()
+
 		
 		NBFetchService().fetch(from: urlString) { (result: Result<ServerView.ServerPackModel, Error>) in
 			switch result {
@@ -165,7 +186,7 @@ enum FR {
 					try FileManager.forceWrite(content: pack.key, to: "server.pem")
 					try FileManager.forceWrite(content: [pack.cert, pack.ca].joined(separator: "\n"), to: "server.crt")
 					try FileManager.forceWrite(content: pack.info.domains.commonName, to: "commonName.txt")
-					generator.notificationOccurred(.success)
+					AppHaptics.result(.success)
 					completion(true)
 				} catch {
 					completion(false)

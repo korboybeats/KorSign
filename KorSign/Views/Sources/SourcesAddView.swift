@@ -66,8 +66,9 @@ struct SourcesAddView: View {
 				.toolbar { toolbarContent }
 				.animation(.default, value: _filteredRecommendedSourcesData.map { $0.data.id ?? "" })
 				.alert("Failed to Load Community Repositories", isPresented: $_showCommunityReposErrorAlert) {
-					Button("OK", role: .cancel) { }
+					Button("OK", role: .cancel) { AppHaptics.action(); }
 					Button("Retry") {
+						AppHaptics.action()
 						Task {
 							await _fetchCommunityRepositoriesList()
 						}
@@ -113,6 +114,7 @@ struct SourcesAddView: View {
 	var importExportSection: some View {
 		Section {
 			Button(.localized("Import"), systemImage: "square.and.arrow.down") {
+				AppHaptics.action()
 				_isImporting = true
 				_fetchImportedRepositories(UIPasteboard.general.string) { success, count in
 					_isImporting = false
@@ -125,6 +127,7 @@ struct SourcesAddView: View {
 			}
 
 			Button(.localized("Export"), systemImage: "doc.on.doc") {
+				AppHaptics.action()
 				let sources = Storage.shared.getSources()
 				if sources.isEmpty {
 					Toast.error("No sources to export", duration: .sticky)
@@ -144,6 +147,7 @@ struct SourcesAddView: View {
 	var communityRepositoriesSection: some View {
 		Section {
 			Button(action: {
+				AppHaptics.action()
 				if communityRepos.isEmpty {
 					Task {
 						await _fetchCommunityRepositoriesList()
@@ -229,6 +233,7 @@ struct SourcesAddView: View {
 							iconUrl: source.currentIconURL
 						)
 						Button {
+							AppHaptics.action()
 							Storage.shared.addSource(url, repository: source) { error in
 								_refreshFilteredRecommendedSourcesData()
 								if let error = error {

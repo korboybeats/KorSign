@@ -86,6 +86,7 @@ extension WebManagerView {
 	@ViewBuilder
 	private func _urlRow(_ title: String, value: String, systemImage: String) -> some View {
 		Button {
+			AppHaptics.action()
 			UIPasteboard.general.string = value
 			Toast.info(.localized("Copied"), systemImage: "doc.on.doc.fill")
 		} label: {
@@ -182,6 +183,7 @@ extension WebManagerView {
 				}
 
 				Button(role: .destructive) {
+					AppHaptics.action()
 					manager.clearRecent()
 				} label: {
 					Label(.localized("Clear"), systemImage: "trash")

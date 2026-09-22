@@ -48,7 +48,7 @@ struct FilesCompressionView: View {
 			}
 
 			Section {
-				NavigationLink(destination: ImportFoldersView()) {
+				NavigationLink(destination: ImportFoldersView().navigationHaptics()) {
 					Label(.localized("Import Folders"), systemImage: "folder")
 				}
 			} footer: {

@@ -6,7 +6,6 @@
 //
 
 import CoreData
-import UIKit.UIImpactFeedbackGenerator
 import Zsign
 
 // MARK: - Class extension: certificate
@@ -21,7 +20,7 @@ extension Storage {
 		completion: @escaping (Error?) -> Void
 	) {
 		context.performAndWait {
-			let generator = UIImpactFeedbackGenerator(style: .light)
+
 		
 			let new = CertificatePair(context: context)
 			new.uuid = uuid
@@ -34,7 +33,7 @@ extension Storage {
 
 			switch saveContext() {
 			case .success:
-				generator.impactOccurred()
+
 				revokagedCertificate(for: new)
 				completion(nil)
 			case .failure(let error):

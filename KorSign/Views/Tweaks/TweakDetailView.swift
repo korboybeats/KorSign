@@ -154,6 +154,7 @@ extension TweakDetailView {
 			}
 
 			Button {
+				AppHaptics.action()
 				_isAddingVersion = true
 			} label: {
 				Label(.localized("Add Version"), systemImage: "plus")
@@ -165,6 +166,7 @@ extension TweakDetailView {
 	private func _versionRow(tweak: ManagedTweak, version: TweakVersion) -> some View {
 		let isActive = tweak.activeVersion?.id == version.id
 		Button {
+			AppHaptics.action()
 			manager.setSelectedVersion(version.id, for: tweakId)
 		} label: {
 			HStack(spacing: 12) {
@@ -186,11 +188,13 @@ extension TweakDetailView {
 		}
 		.swipeActions(edge: .trailing) {
 			Button(role: .destructive) {
+				AppHaptics.action()
 				manager.deleteVersion(version.id, from: tweakId)
 			} label: {
 				Label(.localized("Delete"), systemImage: "trash")
 			}
 			Button {
+				AppHaptics.action()
 				_share(version)
 			} label: {
 				Label(.localized("Share"), systemImage: "square.and.arrow.up")
@@ -199,11 +203,13 @@ extension TweakDetailView {
 		}
 		.contextMenu {
 			Button {
+				AppHaptics.action()
 				_share(version)
 			} label: {
 				Label(.localized("Share"), systemImage: "square.and.arrow.up")
 			}
 			Button {
+				AppHaptics.action()
 				_exportToFiles(version)
 			} label: {
 				Label(.localized("Save to Files"), systemImage: "folder")
@@ -221,6 +227,7 @@ extension TweakDetailView {
 					_componentRow(tweak: tweak, version: version, component: component)
 				}
 				Button {
+					AppHaptics.action()
 					_isAddingFile = true
 				} label: {
 					Label(.localized("Add File"), systemImage: "plus")
@@ -253,6 +260,7 @@ extension TweakDetailView {
 
 			// Full analysis on its own screen so it doesn't crowd this list.
 			NavigationLink {
+                Group {
 				TweakInfoView(
 					title: component.fileName,
 					fileURL: manager.fileURL(forTweak: tweak.id, version: version, component: component),
@@ -268,11 +276,14 @@ extension TweakDetailView {
 					} : nil,
 					currentConfig: component.config ?? tweak.config
 				)
-			} label: {
+
+                }.navigationHaptics()
+            } label: {
 				Label(.localized("File Info & Dependencies"), systemImage: "info.circle")
 			}
 
 			Button(role: .destructive) {
+				AppHaptics.action()
 				manager.deleteComponent(component.id, versionId: version.id, from: tweakId)
 			} label: {
 				Label(.localized("Remove File"), systemImage: "trash")
@@ -349,6 +360,7 @@ extension TweakDetailView {
 				Text(id)
 					.swipeActions(edge: .trailing) {
 						Button(role: .destructive) {
+							AppHaptics.action()
 							manager.mutate(tweakId) { $0.autoInjectBundleIds.removeAll { $0 == id } }
 						} label: {
 							Label(.localized("Delete"), systemImage: "trash")
@@ -361,6 +373,7 @@ extension TweakDetailView {
 					.textInputAutocapitalization(.never)
 					.autocorrectionDisabled()
 				Button {
+					AppHaptics.action()
 					_addBundleId()
 				} label: {
 					Image(systemName: "plus.circle.fill")
@@ -369,6 +382,7 @@ extension TweakDetailView {
 			}
 
 			Button {
+				AppHaptics.action()
 				_isPickingFromLibrary = true
 			} label: {
 				Label(.localized("Choose From Library"), systemImage: "apps.iphone")

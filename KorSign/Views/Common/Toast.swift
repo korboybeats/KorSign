@@ -18,9 +18,9 @@ enum ToastHaptic {
 
 	func fire() {
 		switch self {
-		case .success: NBHaptic.notify(.success)
-		case .error: NBHaptic.notify(.error)
-		case .light: NBHaptic.tap()
+		case .success: AppHaptics.result(.success)
+		case .error: AppHaptics.result(.error)
+		case .light: AppHaptics.notice()
 		case .none: break
 		}
 	}
@@ -185,7 +185,7 @@ struct ToastBanner: View {
 				.offset(x: _textIn ? 0 : -8)
 
 			if item.duration == nil {
-				Button(action: onDismiss) {
+				Button(action: { AppHaptics.action(); onDismiss() }) {
 					Image(systemName: "xmark")
 						.font(.system(size: 11, weight: .bold))
 						.foregroundStyle(.secondary)

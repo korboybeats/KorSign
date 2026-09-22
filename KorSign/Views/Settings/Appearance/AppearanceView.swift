@@ -9,6 +9,7 @@ import NimbleViews
 import UIKit
 // MARK: - View
 struct AppearanceView: View {
+
 	@AppStorage("Feather.userInterfaceStyle")
 	private var _userIntefacerStyle: Int = UIUserInterfaceStyle.unspecified.rawValue
 	
@@ -119,7 +120,7 @@ struct AppearanceView: View {
 				Toggle(.localized("Show All Repos by Default"), isOn: $_sourcesTabShowAllReposDirectly)
 				Toggle(.localized("Show Updates as Tab"), isOn: $_sourcesShowUpdatesAsTab)
 				Toggle(.localized("Update Count Badge"), isOn: $_showSourcesUpdateBadge)
-				NavigationLink(destination: IgnoredUpdatesView()) {
+				NavigationLink(destination: IgnoredUpdatesView().navigationHaptics()) {
 					Label(.localized("Ignored Updates"), systemImage: "bell.slash")
 				}
 			} footer: {

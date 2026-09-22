@@ -47,6 +47,7 @@ extension ResetView {
 	private func _cache() -> some View {
 		Section {
 			Button(.localized("Reset Network Cache"), systemImage: "xmark.rectangle.portrait") {
+				AppHaptics.action()
 				Self.resetAlert(
 					title: .localized("Reset Network Cache"),
 					message: _cacheSize()
@@ -61,6 +62,7 @@ extension ResetView {
 	private func _coredata() -> some View {
 		Section {
 			Button(.localized("Reset Sources"), systemImage: "xmark.circle") {
+				AppHaptics.action()
 				Self.resetAlert(
 					title: .localized("Reset Signed Apps"),
 					message: Storage.shared.countContent(for: AltSource.self)
@@ -70,6 +72,7 @@ extension ResetView {
 			}
 			
 			Button(.localized("Reset Signed Apps"), systemImage: "xmark.circle") {
+				AppHaptics.action()
 				Self.resetAlert(
 					title: .localized("Reset Signed Apps"),
 					message: Storage.shared.countContent(for: Signed.self)
@@ -79,6 +82,7 @@ extension ResetView {
 			}
 			
 			Button(.localized("Reset Imported Apps"), systemImage: "xmark.circle") {
+				AppHaptics.action()
 				Self.resetAlert(
 					title: .localized("Reset Imported Apps"),
 					message: Storage.shared.countContent(for: Imported.self)
@@ -88,6 +92,7 @@ extension ResetView {
 			}
 
 			Button(.localized("Reset Tweaks"), systemImage: "xmark.circle") {
+				AppHaptics.action()
 				Self.resetAlert(
 					title: .localized("Reset Tweaks"),
 					message: .localized("%lld tweaks", arguments: TweakManager.shared.tweaks.count)
@@ -97,6 +102,7 @@ extension ResetView {
 			}
 
 			Button(.localized("Reset Certificates"), systemImage: "xmark.circle") {
+				AppHaptics.action()
 				Self.resetAlert(
 					title: .localized("Reset Certificates"),
 					message: Storage.shared.countContent(for: CertificatePair.self)
@@ -111,12 +117,14 @@ extension ResetView {
 	private func _all() -> some View {
 		Section {
 			Button(.localized("Reset Settings"), systemImage: "xmark.octagon") {
+				AppHaptics.action()
 				Self.resetAlert(title: .localized("Reset Settings")) {
 					Self.resetUserDefaults()
 				}
 			}
 			
 			Button(.localized("Reset All"), systemImage: "xmark.octagon") {
+				AppHaptics.action()
 				Self.resetAlert(title: .localized("Reset All")) {
 					Self.resetAll()
 				}

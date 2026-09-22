@@ -60,7 +60,7 @@ private struct InstallStatusView: View {
 	private func _close() -> some View {
 		ZStack {
 			if !viewModel.isCompleted {
-				Button(action: onCancel) {
+				Button(action: { AppHaptics.action(); onCancel() }) {
 					Image(systemName: "xmark.circle.fill")
 						.font(.title3)
 						.symbolRenderingMode(.hierarchical)
@@ -91,6 +91,7 @@ private struct InstallStatusView: View {
 		ZStack {
 			if viewModel.isCompleted {
 				Button {
+					AppHaptics.action()
 					UIApplication.openApp(with: app.identifier ?? "")
 				} label: {
 					NBButton("Open", systemImage: "", style: .text)

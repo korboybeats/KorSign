@@ -64,6 +64,7 @@ struct SourceNewsCardInfoView: View {
 						
 						if let url = new.url {
 							Button {
+								AppHaptics.action()
 								UIApplication.shared.open(url)
 							} label: {
 								NBSheetButton(title: .localized("Open"), systemImage: "arrow.up.right")

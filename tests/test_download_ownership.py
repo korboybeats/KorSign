@@ -25,6 +25,7 @@ download = (base / 'Download.swift').read_text().split('struct DownloadProgressS
 download = '\n'.join(line for line in download.splitlines() if not line.startswith('import '))
 program = r'''
 import Foundation
+enum FileLogger { static func log(_ text: String, category: String) {} }
 @propertyWrapper struct Published<Value> { var wrappedValue: Value }
 enum DownloadPhase { case queued, downloading, paused, importing, signing, completed }
 // Swift's asynchronous main executor on macOS need not use the OS main thread.

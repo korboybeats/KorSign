@@ -86,6 +86,7 @@ struct MinimizedDownloadHeader: View {
             Spacer()
 
             Button {
+                AppHaptics.action()
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                     viewState = .collapsed
                     savedState = .collapsed
@@ -169,6 +170,7 @@ struct CollapsedDownloadHeader: View {
 
             HStack(spacing: 8) {
                 Button {
+                    AppHaptics.action()
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                         viewState = .minimized
                         savedState = .minimized
@@ -181,6 +183,7 @@ struct CollapsedDownloadHeader: View {
                 .buttonStyle(.borderless)
                 
                 Button {
+                    AppHaptics.action()
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                         viewState = .expanded
                         savedState = .expanded
@@ -248,6 +251,7 @@ struct ExpandedDownloadHeader: View {
 					Spacer()
 
 					Button {
+						AppHaptics.action()
 						if isPaused {
 							DownloadManager.shared.resumeAllDownloads()
 						} else {
@@ -261,6 +265,7 @@ struct ExpandedDownloadHeader: View {
 					.buttonStyle(.borderless)
 
 					Button {
+						AppHaptics.action()
 						viewState = .collapsed
 						savedState = .collapsed
 					} label: {
@@ -279,6 +284,7 @@ struct ExpandedDownloadHeader: View {
 
 					if !showAllDownloads {
 						Button {
+							AppHaptics.action()
 							withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
 								showAllDownloads = true
 							}
@@ -313,6 +319,7 @@ struct ExpandedDownloadHeader: View {
 							}
 							
 							Button {
+								AppHaptics.action()
 								withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
 									showAllDownloads = false
 								}

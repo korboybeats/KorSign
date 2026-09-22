@@ -27,6 +27,7 @@ struct BackupView: View {
 		NBList(.localized("Backup & Restore")) {
 			Section {
 				Button {
+					AppHaptics.action()
 					_pendingExport = nil
 					_showExportPicker = true
 				} label: {
@@ -38,6 +39,7 @@ struct BackupView: View {
 
 			Section {
 				Button {
+					AppHaptics.action()
 					_showImporter = true
 				} label: {
 					Label(.localized("Restore from Backup"), systemImage: "square.and.arrow.down")
@@ -106,8 +108,8 @@ struct BackupView: View {
 		}
 		.alert(.localized("Backup Password"), isPresented: $_showRestorePassword) {
 			SecureField(.localized("Password"), text: $_password)
-			Button(.localized("Cancel"), role: .cancel) {}
-			Button(.localized("Continue")) { _openBackup() }
+			Button(.localized("Cancel"), role: .cancel) { AppHaptics.action();}
+			Button(.localized("Continue")) { AppHaptics.action(); _openBackup() }
 		} message: {
 			Text(.localized("Enter the password this backup was encrypted with."))
 		}

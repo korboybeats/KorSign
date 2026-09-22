@@ -8,6 +8,7 @@
 import SwiftUI
 import CoreData
 import NimbleViews
+import NimbleExtensions
 
 // MARK: - View
 struct LibraryView: View {
@@ -23,6 +24,7 @@ struct LibraryView: View {
 	@State private var _postInstallImportWorkItem: DispatchWorkItem?
     @State private var _isDownloadingPresenting = false
     @State private var _alertDownloadString: String = "" // for _isDownloadingPresenting
+
 
     @AppStorage("KorSign.libraryDefaultImportAction")
     private var _defaultImportAction: String = "files"
@@ -89,17 +91,19 @@ struct LibraryView: View {
                         if _editMode.isEditing {
                             HStack(spacing: 12) {
                                 Button("Done") {
+                                    AppHaptics.action()
                                     withAnimation {
                                         _editMode = .inactive
                                         _selectedAppUUIDs.removeAll()
                                     }
                                 }
-                                Button(action: selectAllApps) {
+                                Button(action: { AppHaptics.action(); selectAllApps() }) {
                                     Text("Select All")
                                 }
                             }
                         } else {
                             Button("Edit") {
+                                AppHaptics.action()
                                 withAnimation {
                                     _editMode = .active
                                 }
@@ -114,6 +118,7 @@ struct LibraryView: View {
                             } label: {
                                 Image(systemName: "plus")
                             } primaryAction: {
+                                AppHaptics.action()
                                 _performDefaultImportAction()
                             }
                         }
@@ -138,17 +143,31 @@ struct LibraryView: View {
                 .sheet(isPresented: $_isImportingPresenting) {
 					importerSheet
 						.onAppear {
+							tabSelection.isImportPickerPresented = true
+                            tabSelection.hasPendingLaunchImport = false
 							FileLogger.log("importer sheet appeared pending=\(installQueue.hasPendingImportRequest) phase=\(String(describing: scenePhase))", category: "install-import-debug")
 							if installQueue.consumeImportRequest() {
 								FileLogger.log("post-install IPA picker confirmed", category: "install-import-debug")
 							}
 						}
 						.onDisappear {
-							FileLogger.log("importer sheet disappeared pending=\(installQueue.hasPendingImportRequest) phase=\(String(describing: scenePhase))", category: "install-import-debug")
+							tabSelection.isImportPickerPresented = false
+                            FileLogger.log("importer sheet disappeared pending=\(installQueue.hasPendingImportRequest) phase=\(String(describing: scenePhase))", category: "install-import-debug")
 						}
                 }
                 .alert(.localized("Import from URL"), isPresented: $_isDownloadingPresenting) {
                     urlImportAlert
+                }
+                .task {
+                    _presentLaunchImport(phase: scenePhase)
+                }
+                .onChange(of: tabSelection.selectedTab) { _ in
+                    _presentLaunchImport(phase: scenePhase)
+                }
+                .onChange(of: tabSelection.hasPendingLaunchImport) { pending in
+                    if pending, UIApplication.shared.applicationState == .active {
+                        _presentLaunchImport(phase: .active)
+                    }
                 }
                 .onChange(of: _editMode) { mode in
                     if mode == .inactive {
@@ -161,13 +180,17 @@ struct LibraryView: View {
 				}
 				.onChange(of: scenePhase) { phase in
 					FileLogger.log("Library scenePhase=\(String(describing: phase)) pending=\(installQueue.hasPendingImportRequest) importerBinding=\(_isImportingPresenting) tab=\(tabSelection.selectedTab.rawValue)", category: "install-import-debug")
-					if phase == .active { _presentPendingPostInstallImport() }
+					if phase == .active {
+                        _presentLaunchImport(phase: phase)
+                        _presentPendingPostInstallImport()
+                    }
 				}
 				.onChange(of: _isImportingPresenting) { presented in
 					FileLogger.log("importer binding changed=\(presented) pending=\(installQueue.hasPendingImportRequest) phase=\(String(describing: scenePhase))", category: "install-import-debug")
 				}
 				.onAppear {
 					FileLogger.log("Library appeared pending=\(installQueue.hasPendingImportRequest) phase=\(String(describing: scenePhase)) tab=\(tabSelection.selectedTab.rawValue)", category: "install-import-debug")
+					_presentLaunchImport(phase: scenePhase)
 					_presentPendingPostInstallImport()
 				}
 				.onDisappear {
@@ -178,9 +201,10 @@ struct LibraryView: View {
                     isPresented: $_showDeleteConfirmation
                 ) {
                     Button("Delete", role: .destructive) {
+                        AppHaptics.action()
                         bulkDeleteSelectedApps()
                     }
-                    Button("Cancel", role: .cancel) {}
+                    Button("Cancel", role: .cancel) { AppHaptics.action();}
                 } message: {
                     Text("This action cannot be undone.")
                 }
@@ -340,6 +364,7 @@ struct LibraryView: View {
             }
 
             Button(role: .destructive) {
+                AppHaptics.action()
                 _showDeleteConfirmation = true
             } label: {
                 Image(systemName: "trash")
@@ -364,7 +389,7 @@ struct LibraryView: View {
         isDisabled: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        Button(action: { AppHaptics.action(); action() }) {
             Label(title, systemImage: systemImage)
                 .font(.subheadline.weight(.medium))
                 .lineLimit(1)
@@ -379,13 +404,36 @@ struct LibraryView: View {
     @ViewBuilder
     private var importMenuActions: some View {
         Button(.localized("Import from Files"), systemImage: "folder") {
+            AppHaptics.action()
             _presentFileImporter(allowsMultipleSelection: false)
         }
         Button(.localized("Import Multiple Files"), systemImage: "square.stack") {
+            AppHaptics.action()
             _presentFileImporter(allowsMultipleSelection: true)
         }
         Button(.localized("Import from URL"), systemImage: "globe") {
+            AppHaptics.action()
             _isDownloadingPresenting = true
+        }
+    }
+
+    private func _presentLaunchImport(phase: ScenePhase) {
+        guard phase == .active, tabSelection.selectedTab == .library,
+              tabSelection.hasPendingLaunchImport else { return }
+        guard InstallQueue.shared.current == nil else {
+            tabSelection.hasPendingLaunchImport = false
+            FileLogger.log("automatic picker suppressed: installation queue occupied", category: "install-import-debug")
+            return
+        }
+        Presentation.afterDismiss {
+            guard InstallQueue.shared.current == nil else {
+                tabSelection.hasPendingLaunchImport = false
+                return
+            }
+            guard UIApplication.shared.applicationState == .active, tabSelection.selectedTab == .library,
+                  tabSelection.hasPendingLaunchImport, !_isImportingPresenting else { return }
+            FileLogger.log("launch picker requesting presentation", category: "install-import-debug")
+            _presentFileImporter(allowsMultipleSelection: false)
         }
     }
 
@@ -457,9 +505,11 @@ struct LibraryView: View {
         TextField(.localized("URL"), text: $_alertDownloadString)
             .textInputAutocapitalization(.never)
         Button(.localized("Cancel"), role: .cancel) {
+            AppHaptics.action()
             _alertDownloadString = ""
         }
         Button(.localized("OK")) {
+            AppHaptics.action()
             if let url = URL(string: _alertDownloadString) {
                 _ = downloadManager.startDownload(
                     from: url,

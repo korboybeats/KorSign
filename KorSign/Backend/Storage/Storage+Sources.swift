@@ -8,7 +8,6 @@
 import CoreData
 import AltSourceKit
 import OSLog
-import UIKit.UIImpactFeedbackGenerator
 
 // MARK: - Class extension: Sources
 extension Storage {
@@ -33,8 +32,7 @@ extension Storage {
 				Logger.misc.debug("ignoring \(identifier)")
 				return
 			}
-		
-			let generator = UIImpactFeedbackGenerator(style: .light)
+
 		
 			let new = AltSource(context: context)
 			new.name = name
@@ -46,7 +44,7 @@ extension Storage {
 			do {
 				if !deferSave {
 					try saveContext().get()
-					generator.impactOccurred()
+
 				}
 				completion(nil)
 			} catch {
@@ -79,7 +77,7 @@ extension Storage {
 		completion: @escaping (Error?) -> Void
 	) {
 		context.performAndWait {
-			let generator = UIImpactFeedbackGenerator(style: .light)
+
 		
 			for (url, repo) in repos {
 				var insertionError: Error?
@@ -92,7 +90,7 @@ extension Storage {
 			}
 
 			switch saveContext() {
-			case .success: generator.impactOccurred(); completion(nil)
+			case .success: completion(nil)
 			case .failure(let error): completion(error)
 			}
 		}

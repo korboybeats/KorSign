@@ -29,11 +29,13 @@ struct CertificatesInfoEntitlementView: View {
 				Menu {
 					Section(.localized("Copy")) {
 						Button {
+							AppHaptics.action()
 							_copy(_readableString)
 						} label: {
 							Label(.localized("Copy as Text"), systemImage: "doc.on.doc")
 						}
 						Button {
+							AppHaptics.action()
 							_copy(_plistString)
 						} label: {
 							Label(.localized("Copy as Property List"), systemImage: "chevron.left.forwardslash.chevron.right")
@@ -42,16 +44,19 @@ struct CertificatesInfoEntitlementView: View {
 
 					Section(.localized("Export File")) {
 						Button {
+							AppHaptics.action()
 							_export(_readableString, fileName: "entitlements.txt")
 						} label: {
 							Label(.localized("Readable Text (.txt)"), systemImage: "doc.text")
 						}
 						Button {
+							AppHaptics.action()
 							_export(_jsonString, fileName: "entitlements.json")
 						} label: {
 							Label(.localized("JSON (.json)"), systemImage: "curlybraces")
 						}
 						Button {
+							AppHaptics.action()
 							_export(_plistString, fileName: "entitlements.plist")
 						} label: {
 							Label(.localized("Property List (.plist)"), systemImage: "doc.badge.gearshape")

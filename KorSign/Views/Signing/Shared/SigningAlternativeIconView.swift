@@ -24,6 +24,7 @@ struct SigningAlternativeIconView: View {
 			if !_alternateIcons.isEmpty {
 				ForEach(_alternateIcons, id: \.name) { icon in
 					Button {
+						AppHaptics.action()
 						appIcon = _iconUrl(icon.path)
 						dismiss()
 					} label: {

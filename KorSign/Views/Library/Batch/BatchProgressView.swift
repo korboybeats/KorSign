@@ -166,7 +166,7 @@ struct BatchProgressView: View {
 			.frame(maxWidth: .infinity, alignment: .leading)
 
 			if isInstalling {
-				Button(.localized("Skip"), action: runner.skipCurrentInstall)
+				Button(.localized("Skip"), action: { AppHaptics.action(); runner.skipCurrentInstall() })
 					.font(.subheadline.weight(.medium))
 					.buttonStyle(.bordered)
 					.controlSize(.small)

@@ -54,7 +54,7 @@ struct SelfUpdateSheet: View {
 			.animation(.spring(response: 0.42, dampingFraction: 0.82), value: _isWorking)
 			.toolbar {
 				ToolbarItem(placement: .topBarTrailing) {
-					Button(.localized("Close")) { dismiss() }
+					Button(.localized("Close")) { AppHaptics.action(); dismiss() }
 						.disabled(_locksDismiss)
 				}
 			}
@@ -155,6 +155,7 @@ struct SelfUpdateSheet: View {
 
 			if !_locksDismiss {
 				Button(.localized("Close")) {
+					AppHaptics.action()
 					_manager.phase = .idle
 					dismiss()
 				}
@@ -201,6 +202,7 @@ struct SelfUpdateSheet: View {
 			}
 
 			Button {
+				AppHaptics.action()
 				_manager.beginUpdate(to: release)
 			} label: {
 				Text(verbatim: release.isInstalled ? .localized("Reinstall %@", arguments: release.version) : .localized("Update Now"))
@@ -211,10 +213,11 @@ struct SelfUpdateSheet: View {
 
 			if offersReminders {
 				HStack(spacing: 10) {
-					Button { dismiss() } label: {
+					Button { AppHaptics.action(); dismiss() } label: {
 						Text(.localized("Remind Me Later")).frame(maxWidth: .infinity)
 					}
 					Button(role: .destructive) {
+						AppHaptics.action()
 						_manager.ignore(release.version)
 						dismiss()
 					} label: {
@@ -243,6 +246,7 @@ struct SelfUpdateSheet: View {
 				.frame(maxWidth: .infinity, alignment: .leading)
 			if _manager.method == .idevice {
 				Button {
+					AppHaptics.action()
 					UIApplication.open("localdevvpn://enable?scheme=feather")
 				} label: {
 					Label(.localized("Connect to LocalDevVPN"), systemImage: "link")
@@ -253,12 +257,14 @@ struct SelfUpdateSheet: View {
 			}
 			HStack(spacing: 10) {
 				Button {
+					AppHaptics.action()
 					_manager.phase = .idle
 					dismiss()
 				} label: {
 					Text(.localized("Close")).frame(maxWidth: .infinity)
 				}
 				Button {
+					AppHaptics.action()
 					_manager.beginUpdate(to: release)
 				} label: {
 					Text(.localized("Try Again")).frame(maxWidth: .infinity)

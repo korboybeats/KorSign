@@ -37,6 +37,7 @@ struct SettingsDonationCellView: View {
 				}
 
 				Button {
+					AppHaptics.action()
 					UIApplication.open(site)
 				} label: {
 					Text(.localized("Donate to Korboy"))

@@ -41,6 +41,7 @@ struct KorSignApp: App {
     
     init() {
 		let defaults = UserDefaults.standard
+        AppHaptics.migratePreferences(defaults)
 		let legacyTint = defaults.string(forKey: Color.userTintColorKey) ?? Color.defaultUserTintHex
 
 		if defaults.string(forKey: Color.selectedTintThemeKey) == nil {
@@ -148,6 +149,7 @@ struct KorSignApp: App {
                 UIApplication.topViewController()?.view.window?.tintColor = UIColor(Color.userTint)
             }
             .onChange(of: scenePhase) { newPhase in
+                tabSelection.handleScenePhase(newPhase, installationActive: InstallQueue.shared.current != nil)
 				FileLogger.log("app scenePhase=\(String(describing: newPhase))", category: "install-import-debug")
                 if newPhase == .active {
                     Task { @MainActor in
@@ -203,9 +205,7 @@ struct KorSignApp: App {
 				else {
 					return
 				}
-				
-				let generator = UINotificationFeedbackGenerator()
-				generator.prepare()
+
 				
 				let p12URL = FileManager.default.decodeAndWrite(base64: p12Base64, pathComponent: ".p12")
 				let provisionURL = FileManager.default.decodeAndWrite(base64: provisionBase64, pathComponent: ".mobileprovision")
@@ -218,7 +218,7 @@ struct KorSignApp: App {
 					let p12URL, let provisionURL,
 					FR.checkPasswordForCertificate(for: p12URL, with: password, using: provisionURL)
 				else {
-					generator.notificationOccurred(.error)
+					AppHaptics.result(.error)
 					UIAlertController.showAlertWithOk(
 						title: .localized("Import Failed"),
 						message: .localized("Failed to import certificate. Please check that the certificate and password are valid.")
@@ -236,7 +236,7 @@ struct KorSignApp: App {
 					if let error = error {
 						UIAlertController.showAlertWithOk(title: .localized("Error"), message: error.localizedDescription)
 					} else {
-						generator.notificationOccurred(.success)
+						AppHaptics.result(.success)
 					}
 				}
 				

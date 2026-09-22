@@ -15,14 +15,18 @@ extension Logger { static let misc = Logger(subsystem: "ImportLifecycleTest", ca
 final class Download: @unchecked Sendable { var unpackageProgress = 0.0 }
 struct ImportError: Error { enum Step { case extract }; let underlying: Error? }
 enum FixtureError: Error { case extraction }
+var expectedBufferSize = 256 * 1024
+enum FileLogger { static func log(_ message: String, category: String) {} }
 enum ArchiveExtraction {
- static func unzip(_ source: URL, to directory: URL, progress: ((Double) -> Void)?) throws {
+ static func unzip(_ source: URL, to directory: URL, bufferSize: Int, useZlib: Bool, profile: ((String) -> Void)?, progress: ((Double) -> Void)?) throws {
+  precondition(bufferSize == expectedBufferSize && useZlib)
   Thread.sleep(forTimeInterval: 0.1)
   if source.lastPathComponent == "failure" { throw FixtureError.extraction }
   progress?(1)
  }
 }
 final class Handler: @unchecked Sendable {
+ let extractionBufferSize = expectedBufferSize
  let _ipa: URL
  let _uniqueWorkDir = URL(fileURLWithPath: "/unused-fixture")
  let _uuid = "fixture"

@@ -70,6 +70,7 @@ extension SourcesCellView {
 	@ViewBuilder
 	private func _actions(for source: AltSource) -> some View {
 		Button(.localized("Delete"), systemImage: "trash", role: .destructive) {
+			AppHaptics.action()
 			Storage.shared.deleteSource(for: source)
 		}
 	}
@@ -77,6 +78,7 @@ extension SourcesCellView {
 	@ViewBuilder
 	private func _contextActions(for source: AltSource) -> some View {
 		Button(.localized("Copy"), systemImage: "doc.on.clipboard") {
+			AppHaptics.action()
 			UIPasteboard.general.string = source.sourceURL?.absoluteString
 		}
 	}
@@ -84,6 +86,7 @@ extension SourcesCellView {
 	@ViewBuilder
 	private func _excludeAction() -> some View {
 		Button {
+			AppHaptics.action()
 			let newValue = !_isExcluded
 			RepositorySettings.setSourceExcluded(_sourceIdentifier, excluded: newValue)
 			_isExcluded = newValue

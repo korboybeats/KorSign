@@ -46,6 +46,7 @@ struct SigningToggleCellView<T>: View {
 	@ViewBuilder
 	private var _exportActions: some View {
 		Button {
+			AppHaptics.action()
 			guard let fileURL = _exportableURL else { return }
 			guard TweakManager.shared.addTweak(name: fileURL.lastPathComponent, from: fileURL) != nil else { return }
 			Toast.info(.localized("Added to Tweak Manager"))
@@ -53,6 +54,7 @@ struct SigningToggleCellView<T>: View {
 			Label(.localized("Send to Tweak Manager"), systemImage: "wrench.and.screwdriver")
 		}
 		Button {
+			AppHaptics.action()
 			guard let fileURL = _exportableURL, let shareURL = FileExporter.shareableURL(for: fileURL) else { return }
 			UIActivityViewController.show(activityItems: [shareURL.url], retaining: shareURL.owner)
 		} label: {

@@ -306,6 +306,7 @@ final class AppInstaller: ObservableObject {
 		let probe = _installProbe
 		_progressTask = Task { [weak self] in
 			var lastEvidence = ""
+			let pollingStarted = ProcessInfo.processInfo.systemUptime
 			while !Task.isCancelled {
 				guard let identifier = self?.app.identifier else { break }
 				let evidence = await Task.detached(priority: .utility) { probe.read(identifier) }.value
@@ -341,6 +342,7 @@ final class AppInstaller: ObservableObject {
 					self.viewModel.installProgress = min(0.99, max(0, (raw - 0.6) / 0.3))
 				}
 				if self._ota.timedOut(at: ProcessInfo.processInfo.systemUptime) {
+					FileLogger.log("installation timeout phase=\(self._ota.phase) elapsed=\(ProcessInfo.processInfo.systemUptime - pollingStarted) appState=\(UIApplication.shared.applicationState.rawValue) lastEvidence=\(lastEvidence); manifest/HEAD probes do not prove IPA download or user acceptance", category: "install")
 					let message: String
 					switch self._ota.phase {
 					case .waiting: message = .localized("Installation didn't start. The signed app has been kept. Try installing it again.")
